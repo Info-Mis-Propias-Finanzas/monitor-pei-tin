@@ -1,0 +1,41 @@
+# Actualiza data/precios.json con los cierres de PEI y TIN de la BVC y hace commit.
+# Corre de lunes a viernes dos veces: 7:35 a. m. y 1:05 p. m. hora Colombia (UTC-5).
+# La segunda corrida es respaldo: si la primera ya trajo el cierre, no cambia nada.
+name: Actualizar precios PEI y TIN
+
+on:
+  schedule:
+    - cron: '35 12 * * 1-5'
+    - cron: '5 18 * * 1-5'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-precios
+  cancel-in-progress: false
+
+jobs:
+  precios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Traer cierres de la BVC
+        run: python3 scripts/actualizar_precios.py
+      - name: Guardar cambios
+        run: |
+          if git diff --quiet data/precios.json; then
+            echo "Sin cierres nuevos"
+          else
+            git config user.name "actualizador-precios"
+            git config user.email "actions@users.noreply.github.com"
+            git add data/precios.json
+            git commit -m "Precios BVC $(date -u +%F)"
+            git pull --rebase
+            git push
+          fi
