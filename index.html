@@ -1,0 +1,1900 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor PEI y TIN | Real Estate by MPF</title>
+<meta name="description" content="Precio de cierre, descuento frente al valor patrimonial, distribuciones, portafolio y deuda de PEI y TIN, los fondos inmobiliarios listados en la Bolsa de Valores de Colombia. Información educativa, no es recomendación de inversión.">
+<link rel="stylesheet" href="assets/brand.css">
+<style>html, body { margin: 0; background: #FBFAF6; }</style>
+<script src="assets/d3.min.js"></script>
+<script src="assets/dash-shim.js"></script>
+</head>
+<body>
+<div id="dash-root">
+<style>
+#dash-root { --dash-gutter: 0px; }
+.re {
+  /* Real Estate by MPF. Fondos: PEI Azul Sólido, TIN Turquesa Cercano. Interfaz en tinta. */
+  --azul: #074A97; --concreto: #E4EBDF; --turq: #089598; --verde: #B7D84F; --violeta: #A73CE6; --lila: #C88EDB;
+  --ink: #0E1B2C; --ink2: #3F4B57; --ink3: #5E6873; --line: #D9E0D3; --card: #FFFFFF; --bg: #F3F6F0; --soft: #EAF0E5;
+  --pei: #074A97; --pei-t: #074A97; --pei-tint: #EBF1F7;
+  --tin: #089598; --tin-t: #067A7C; --tin-tint: #E6F4F5;
+  --ui: #0E1B2C; --alert: #B3261E; --event: #A73CE6;
+  --grad: linear-gradient(90deg, #089598, #B7D84F, #C88EDB, #A73CE6, #074A97);
+  --r: 20px; --r2: 12px;
+  position: relative;
+  font-family: "PJS", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); background: var(--bg);
+  font-size: 16px; line-height: 1.5; color-scheme: light;
+}
+.re *, .re *::before, .re *::after { box-sizing: border-box; }
+.re [hidden] { display: none !important; }
+.re .num { font-variant-numeric: tabular-nums; }
+.re a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.re a:hover { color: var(--azul); }
+.re :focus-visible { outline: 2px solid #074A97; outline-offset: 2px; box-shadow: 0 0 0 4px #FFFFFF; }
+.re-wrap { max-width: 1200px; margin-inline: auto; padding-inline: max(16px, 3vw); }
+
+/* Barra fija: selector de fondo, secciones y vista avanzada */
+.re-sticky { position: sticky; top: 0; z-index: 20; background: rgba(243, 246, 240, .95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.re-sticky-in { display: flex; align-items: center; gap: 16px; padding-block: 8px; min-height: 56px; }
+.re-sel { display: inline-flex; background: #FFFFFF; border: 1px solid var(--line); border-radius: 999px; padding: 3px; flex: none; }
+.re-sel button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--ink2); padding: 0 14px; height: 36px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.re-sel button i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1.5px #FFFFFF; }
+.re-sel button[aria-pressed="true"] { background: var(--ui); color: #FFFFFF; }
+.re-nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; justify-content: safe center; min-width: 0; }
+.re-nav::-webkit-scrollbar { display: none; }
+.re-nav button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--ink2); padding: 0 11px; height: 36px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.re-nav button:hover { background: var(--concreto); }
+.re-nav button[aria-current="true"] { background: var(--ui); color: #FFFFFF; }
+.re-adv { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--ink2); cursor: pointer; flex: none; min-height: 44px; }
+.re-adv input { appearance: none; -webkit-appearance: none; width: 40px; height: 24px; border-radius: 999px; background: #B9C3B1; position: relative; margin: 0; cursor: pointer; transition: background .2s; flex: none; }
+.re-adv input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; transition: transform .2s; box-shadow: 0 1px 2px rgba(14, 27, 44, .25); }
+.re-adv input:checked { background: var(--ui); }
+.re-adv input:checked::after { transform: translateX(16px); }
+.re-menu-btn { display: none; font: inherit; font-size: 14px; font-weight: 700; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: #FFFFFF; color: var(--ink); align-items: center; gap: 8px; cursor: pointer; margin-left: auto; }
+.re-menu-btn svg { transition: transform .2s; }
+.re-menu-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.re-menu { position: absolute; left: 0; right: 0; top: 100%; background: #FFFFFF; border-bottom: 1px solid var(--line); box-shadow: 0 4px 16px rgba(14, 27, 44, .08); }
+.re-menu .re-wrap { display: flex; flex-direction: column; padding-block: 4px 12px; }
+.re-menu button.go { text-align: left; font: inherit; font-size: 16px; font-weight: 600; border: 0; border-bottom: 1px solid var(--soft); background: none; color: var(--ink); min-height: 48px; padding: 0 4px; cursor: pointer; }
+.re-menu button.go[aria-current="true"] { font-weight: 800; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.re-menu .re-adv { margin-top: 8px; }
+@media (max-width: 1080px) {
+  .re-nav, .re-sticky-in > .re-adv { display: none; }
+  .re-menu-btn { display: inline-flex; }
+}
+@media (max-width: 560px) {
+  .re-sticky-in { gap: 8px; }
+  .re-sel button { height: 40px; padding: 0 12px; }
+  .re-menu-btn { padding: 0 14px; }
+}
+
+/* Secciones */
+.re-main { display: flex; flex-direction: column; gap: 64px; padding-block: 40px 64px; }
+.re-sec { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 72px; }
+.re-band { padding-block: 48px; box-shadow: 0 0 0 100vmax var(--concreto); clip-path: inset(0 -100vmax); background: var(--concreto); }
+.re-sh { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; }
+.re-kicker { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); display: flex; align-items: center; gap: 8px; }
+.re-h2 { font-size: clamp(26px, 3vw, 32px); font-weight: 800; margin: 4px 0 0; line-height: 1.15; letter-spacing: -.01em; }
+.re-h2::after { content: ""; display: block; width: 56px; height: 3px; border-radius: 2px; margin-top: 12px; background: var(--grad); }
+.re-h3 { font-size: 20px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px; line-height: 1.3; flex-wrap: wrap; }
+.re-lead { font-size: 18px; color: var(--ink2); margin: 0; max-width: 70ch; }
+.re-note { font-size: 14px; color: var(--ink3); margin: 0; line-height: 1.5; max-width: 90ch; }
+.re-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.re-g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 16px; }
+.re-g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .re-g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .re-main { gap: 48px; padding-block: 28px 48px; }
+  .re-band { padding-block: 36px; }
+  .re-card { padding: 16px; }
+  .re-lead { font-size: 16px; }
+  .re-h3 { font-size: 18px; }
+}
+.re[data-mode="cliente"] .an { display: none !important; }
+.re[data-sel="AMBOS"] .re-only-one, .re:not([data-sel="AMBOS"]) .re-only-both { display: none !important; }
+.re:not([data-sel="AMBOS"]) .re-pf { display: none !important; }
+.re-badge { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--verde); color: var(--ink); padding: 2px 8px; border-radius: 999px; }
+.re-insight { margin: 0; font-size: 17px; font-weight: 500; line-height: 1.5; padding: 14px 18px; border-radius: var(--r2); background: var(--concreto); border-left: 3px solid var(--ui); color: var(--ink); }
+.re-insight b { font-weight: 800; }
+.re-stat { margin: 0; font-size: 17px; line-height: 1.45; color: var(--ink); }
+.re-stat b { font-weight: 800; }
+.re-seg { display: inline-flex; background: var(--soft); border-radius: 999px; padding: 3px; flex-wrap: wrap; }
+.re-seg button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--ink2); padding: 0 14px; height: 36px; border-radius: 999px; cursor: pointer; }
+.re-seg button[aria-pressed="true"] { background: var(--ui); color: #FFFFFF; }
+@media (max-width: 560px) { .re-seg button { height: 40px; } }
+.re-ctrl { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.re-lbl { font-size: 14px; font-weight: 600; color: var(--ink2); }
+.re-ftag { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; letter-spacing: .02em; color: var(--ct); }
+.re-ftag i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); display: inline-block; }
+
+/* Temas por fondo: con "Ambos", cada tema en una fila con una tarjeta por fondo */
+.re-topics { display: grid; gap: 32px 16px; }
+.re:not([data-sel="AMBOS"]) .re-topics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); }
+.re-topic { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.re-topic.wide { grid-column: 1 / -1; }
+.re-fg { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); flex: 1; }
+#rk-arr { align-items: start; }
+
+/* Resumen */
+.re-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr)); gap: 16px; }
+.re-hc { container-type: inline-size; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 18px; box-shadow: inset 0 4px 0 var(--c); min-width: 0; }
+.re-hc .hd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.re-hc .hd img { height: 28px; width: auto; }
+.re-hc .hd span { font-size: 13px; color: var(--ink3); }
+.re-say { margin: 0; font-size: clamp(22px, 2.4vw, 26px); line-height: 1.3; font-weight: 500; text-wrap: balance; }
+.re-say b { font-weight: 800; color: var(--ct); }
+.re-vbars { display: flex; flex-direction: column; gap: 12px; }
+.re-vb .t { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--ink2); margin-bottom: 6px; }
+.re-vb .t b { color: var(--ink); font-size: 16px; font-weight: 800; white-space: nowrap; }
+.re-vb .trk { height: 12px; border-radius: 6px; background: var(--soft); overflow: hidden; }
+.re-vb .fil { height: 100%; border-radius: 6px; background: var(--c); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.re-vb .fil.nav { background: color-mix(in srgb, var(--c) 30%, #FFFFFF); }
+.re-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.re-kpi { background: var(--bg); border-radius: var(--r2); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.re-kpi .k { font-size: 14px; color: var(--ink2); font-weight: 600; display: block; }
+.re-kpi .k .re-q { margin-left: 6px; vertical-align: -5px; }
+.re-kpi .v { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.re-kpi .d { font-size: 13px; color: var(--ink3); line-height: 1.4; }
+.re-kpi .d.old { color: var(--ink); font-weight: 600; }
+.re-fact { background: var(--card); border: 1px solid var(--line); }
+.re-fact .v { font-size: 24px; }
+@container (max-width: 500px) {
+  .re-kpis { grid-template-columns: 1fr; gap: 8px; }
+  .re-kpi { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "k v" "d v"; align-items: center; column-gap: 12px; }
+  .re-kpi .k { grid-area: k; } .re-kpi .v { grid-area: v; font-size: 24px; } .re-kpi .d { grid-area: d; }
+}
+@media (max-width: 560px) { .re-fact .v { font-size: 20px; } }
+.re-actions { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; }
+.re-cta { font: inherit; font-size: 15px; font-weight: 700; height: 44px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--ui); color: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.re-link { font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: none; border: 0; padding: 0; min-height: 44px; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.re-duel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .re-duel { grid-template-columns: 1fr; } }
+.re-dm { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.re-dm .h { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.re-dm .row { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "f v" "t t"; gap: 4px 10px; align-items: baseline; }
+.re-dm .row .f { grid-area: f; font-weight: 800; font-size: 14px; color: var(--ct); }
+.re-dm .row .v { grid-area: v; text-align: right; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.re-dm .row .t { grid-area: t; height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.re-dm .row .t span { display: block; height: 100%; border-radius: 4px; background: var(--c); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.re-dm .ex { font-size: 13px; color: var(--ink3); }
+.re-prof { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.re-prof .hd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.re-prof .hd img { height: 28px; width: auto; }
+.re-prof .hd span { font-size: 13px; color: var(--ink3); }
+.re-prof p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink2); max-width: 75ch; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.re-prof.open p { display: block; }
+.re-prof .ft { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.re-more-btn { font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: none; border: 0; padding: 0; min-height: 44px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Ayuda */
+.re-q { position: relative; display: inline-flex; vertical-align: middle; }
+.re-q > button { position: relative; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #9AA3AB; background: #FFFFFF; color: var(--ink2); font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.re-q > button::before { content: ""; position: absolute; inset: -11px; }
+.re-q > button:hover, .re-q > button[aria-expanded="true"] { border-color: var(--ui); color: var(--ui); }
+.re-pop { position: absolute; z-index: 40; width: min(20rem, calc(100% - 32px)); background: var(--ink); color: #FFFFFF; border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 16px rgba(14, 27, 44, .25); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.re-pop p { margin: 0; }
+.re .re-say b, .re .re-insight b, .re .re-stat b, .re .re-vb .t b, .re .rx-pick .nm { font-weight: 800; }
+.re .re-asof b { font-weight: 700; }
+.re-pop .x { display: none; }
+@media (max-width: 560px) {
+  .re-pop { left: 16px !important; right: 16px; width: auto; padding: 16px; font-size: 15px; }
+  .re-pop .x { display: block; margin-top: 12px; width: 100%; height: 44px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .5); background: none; color: #FFFFFF; font: inherit; font-weight: 700; cursor: pointer; }
+}
+
+/* Gráficas */
+.re-chart { position: relative; min-height: 240px; }
+.re-chart.sm { min-height: 180px; }
+.re-chart.xs { min-height: 150px; }
+.re-chart svg { display: block; touch-action: pan-y; }
+.re-chart svg text { fill: var(--ink3); font-size: 12px; font-family: inherit; }
+.re-chart svg text.lbl { font-size: 13px; font-weight: 700; }
+.re-chart svg text.ref { font-size: 12px; font-weight: 700; fill: var(--ink); }
+.re-chart svg text.evn { fill: #FFFFFF; font-size: 11px; font-weight: 800; }
+.re-chart:focus-visible { outline: 2px solid #074A97; outline-offset: 4px; box-shadow: none; }
+.re-tip { position: absolute; pointer-events: none; background: var(--ink); color: #FFFFFF; border-radius: 10px; padding: 8px 12px; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 6; box-shadow: 0 4px 16px rgba(14, 27, 44, .2); }
+.re-tip .d { opacity: .8; }
+.re-sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.re-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--ink2); align-items: center; }
+.re-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+@media (hover: none) { .re-chart.lc::after { content: "Toca la gráfica para ver cada dato."; display: block; font-size: 13px; color: var(--ink3); margin-top: 4px; } }
+
+/* Barras horizontales */
+.rx-hb { display: flex; flex-direction: column; gap: 10px; }
+.rx-hb .r { display: grid; grid-template-columns: minmax(0, 12rem) 1fr 3.8rem; gap: 12px; align-items: center; font-size: 14px; }
+.rx-hb .r .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx-hb .r .t { position: relative; height: 12px; border-radius: 6px; background: var(--soft); }
+.rx-hb .r .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; }
+.rx-hb .r .f.over { border-radius: 0 6px 6px 0; background: repeating-linear-gradient(45deg, #B3261E 0 3px, #F4D3D0 3px 6px); }
+.rx-hb .r .f.nd { background: repeating-linear-gradient(45deg, #9AA3AB 0 3px, #FFFFFF 3px 6px); box-shadow: inset 0 0 0 1px #9AA3AB; }
+.rx-hb .r .p { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.rx-hb .r .lim { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
+.rx-hb .r.hdr .t { background: none; height: 18px; }
+.rx-hb .lim-lab { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+@media (max-width: 560px) { .rx-hb .r { grid-template-columns: minmax(0, 8.5rem) 1fr 3.4rem; gap: 8px; } }
+
+/* Portafolio */
+.rx-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 12px; }
+.rx-cat { border: 1px solid var(--line); border-radius: var(--r2); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; cursor: pointer; text-align: left; font: inherit; color: var(--ink); }
+.rx-cat:hover { border-color: #9AA3AB; }
+.rx-cat[aria-pressed="true"] { border: 2px solid var(--c); padding: 13px 15px; background: var(--tint); }
+.rx-cat .h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; }
+.rx-cat .nm { display: flex; align-items: center; gap: 8px; }
+.rx-cat .sw { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(14, 27, 44, .2); flex: none; }
+.rx-cat .pc { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rx-cat .mini { height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
+.rx-cat .mini > span { display: block; height: 100%; background: var(--c); border-radius: 3px; }
+.rx-cat .ds { font-size: 14px; color: var(--ink2); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rx-cat .ft { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--ink3); font-weight: 600; margin-top: auto; }
+.rx-cat .ft .fl { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-weight: 700; white-space: nowrap; }
+.rx-tree { position: relative; min-height: 320px; }
+.rx-tree .cell { position: absolute; overflow: hidden; border: 2px solid #FFFFFF; border-radius: 8px; padding: 5px 7px; font-size: 12px; line-height: 1.25; color: #FFFFFF; cursor: pointer; }
+.rx-tree .cell.lt { color: var(--ink); }
+.rx-tree .cell:hover, .rx-tree .cell.sel { outline: 3px solid var(--ink); outline-offset: -3px; z-index: 2; }
+.rx-tree .cell:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; box-shadow: none; z-index: 3; }
+.rx-tree .cell b { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx-pick { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 24px; font-size: 14px; color: var(--ink2); }
+.rx-pick .nm { font-size: 17px; font-weight: 800; color: var(--ink); width: 100%; }
+.rx-pick b { color: var(--ink); }
+@media (max-width: 560px) { .pf-tree { display: none !important; } }
+.rx-exp { display: grid; grid-template-columns: 1fr minmax(0, 19rem); gap: 18px; }
+@media (max-width: 860px) { .rx-exp { grid-template-columns: 1fr; } }
+.rx-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rx-filters input, .rx-filters select { font: inherit; font-size: 14px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #B9C3B1; background: var(--card); color: var(--ink); }
+.rx-filters input { min-width: 14rem; }
+@media (max-width: 560px) { .rx-filters input, .rx-filters select { height: 44px; width: 100%; } }
+.rx-scroll { max-height: 440px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r2); }
+.rx-detail { border: 1px solid var(--line); border-radius: var(--r2); padding: 16px; display: flex; flex-direction: column; gap: 10px; align-self: start; }
+.rx-detail .nm { font-size: 20px; font-weight: 800; line-height: 1.2; }
+.rx-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; margin: 0; font-size: 14px; }
+.rx-detail dt { color: var(--ink3); }
+.rx-detail dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* Tablas */
+.rx-tw { overflow-x: auto; }
+table.rx-t { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+.rx-t th, .rx-t td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.rx-t th { color: var(--ink3); font-weight: 700; white-space: normal; vertical-align: bottom; background: var(--card); }
+.rx-t th:first-child, .rx-t td:first-child { text-align: left; }
+.rx-t th.txt, .rx-t td.txt { text-align: left; white-space: normal; }
+.rx-scroll th { position: sticky; top: 0; z-index: 1; }
+.rx-scroll th button { font: inherit; font-weight: 700; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; min-height: 32px; }
+.rx-scroll tbody tr { cursor: pointer; }
+.rx-scroll tbody tr:hover, .rx-scroll tbody tr.sel { background: var(--tint); }
+.rx-incell { display: inline-block; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 8px; }
+.re-evdot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--event); }
+.evn-b { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--event); color: #FFFFFF; font-size: 12px; font-weight: 800; align-items: center; justify-content: center; }
+#tabla-eventos th, #tabla-eventos td { text-align: left; }
+@media (max-width: 640px) {
+  #tabla-eventos thead { display: none; }
+  #tabla-eventos tr { display: grid; grid-template-columns: auto auto 1fr; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  #tabla-eventos td { border: 0; padding: 0; white-space: normal; }
+  #tabla-eventos td.ev { grid-column: 1 / -1; font-size: 15px; }
+}
+
+/* Riesgos */
+.rx-stack { display: flex; height: 26px; border-radius: 6px; overflow: hidden; }
+.rx-stack > span { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.re-gauge { display: flex; flex-direction: column; gap: 8px; }
+.re-gauge .big { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; color: var(--ct); }
+.re-gauge .trk { position: relative; height: 16px; border-radius: 8px; background: var(--soft); }
+.re-gauge .fil { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: var(--c); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.re-gauge .lim { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--ink); }
+.re-gauge .lbls { position: relative; height: 20px; font-size: 13px; color: var(--ink3); }
+.re-gauge .lbls span { position: absolute; top: 0; white-space: nowrap; }
+.re-gauge .lbls .l2 { transform: translateX(-50%); font-weight: 700; color: var(--ink); }
+.re-big { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; color: var(--ct); }
+.re-big small { font-size: 20px; font-weight: 600; color: var(--ink); margin-left: 8px; }
+.re-sub3 { font-size: 16px; font-weight: 700; margin: 4px 0 0; }
+
+/* Valoración */
+.rx-val { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 16px; }
+.rx-vm { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.rx-vm .n { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.rx-vm .ex { font-size: 14px; color: var(--ink3); line-height: 1.45; }
+.rx-vm .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rx-vm .pair > div { border-radius: var(--r2); padding: 10px 12px; background: var(--tint); }
+.rx-vm .pair .f { font-size: 13px; font-weight: 800; color: var(--ct); }
+.rx-vm .pair .v { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Simulador */
+.re-sim { display: grid; grid-template-columns: minmax(0, 22rem) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .re-sim { grid-template-columns: 1fr; } }
+.re-field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink2); }
+.re-field input[type="text"] { font: inherit; font-size: 22px; font-weight: 700; padding: 0 16px; height: 52px; border-radius: var(--r2); border: 1px solid #B9C3B1; background: #FFFFFF; color: var(--ink); font-variant-numeric: tabular-nums; width: 100%; }
+.re-field .val { color: var(--ink); font-weight: 800; font-size: 18px; }
+.re-range { position: relative; padding-bottom: 24px; }
+.re-range input { width: 100%; height: 44px; margin: 0; accent-color: var(--ui); cursor: pointer; }
+.re-range .mk { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.re-range .mk::before { content: ""; position: absolute; left: 50%; top: -9px; width: 2px; height: 8px; margin-left: -1px; background: var(--ink); }
+.re-sim-r { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.re-res { background: var(--ui); color: #FFFFFF; border-radius: var(--r); padding: 24px; display: flex; flex-direction: column; gap: 6px; }
+.re-res .k { font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, .9); }
+.re-res .v { font-size: clamp(28px, 3.4vw, 40px); font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.re-res .d { font-size: 14px; color: rgba(255, 255, 255, .9); }
+.re-out { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .re-out { grid-template-columns: 1fr; } }
+.re-out .o { background: var(--card); border: 1px solid var(--line); border-radius: var(--r2); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.re-out .o .k { font-size: 14px; color: var(--ink2); font-weight: 600; }
+.re-out .o .v { font-size: clamp(18px, 1.9vw, 24px); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.re-out .o .d { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+
+/* Calendario */
+.re-next { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 16px; }
+.re-ev { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: start; box-shadow: inset 0 4px 0 var(--c); }
+.re-ev .cal { grid-row: span 3; width: 68px; border-radius: var(--r2); overflow: hidden; text-align: center; background: var(--bg); border: 1px solid var(--line); }
+.re-ev .cal .mo { background: var(--ct); color: #FFFFFF; font-size: 12px; font-weight: 800; text-transform: uppercase; padding: 3px 0; }
+.re-ev .cal .dy { font-size: 24px; font-weight: 800; padding: 4px 0; }
+.re-ev .cal.tbd .dy { font-size: 12px; line-height: 1.25; padding: 7px 4px; font-weight: 700; color: var(--ink2); }
+.re-ev .t { font-weight: 800; font-size: 16px; }
+.re-ev .s { font-size: 14px; color: var(--ink3); }
+.re-ev a { font-size: 14px; font-weight: 700; }
+.re-tlc { box-shadow: inset 0 4px 0 var(--c); }
+.re-tl { display: flex; flex-direction: column; }
+.re-tl .yr { display: grid; grid-template-columns: 4rem 1fr; gap: 12px; align-items: start; padding-block: 12px; border-top: 1px solid var(--line); }
+.re-tl .yr > b { font-size: 16px; }
+.re-tl .qs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; }
+@media (max-width: 640px) { .re-tl .qs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.re-q4 { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.re-q4 .ql { font-size: 13px; font-weight: 800; color: var(--ct); }
+.re-q4 a { font-size: 13px; font-weight: 600; }
+.re-q4 a, .re-ev a, .re-prof .ft a, #tabla-eventos a { display: inline-block; padding-block: 3px; }
+.re-q4 .e { font-size: 13px; color: var(--ink3); }
+details.re-old > summary { cursor: pointer; font-size: 14px; font-weight: 700; min-height: 44px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); list-style: none; }
+details.re-more > summary { cursor: pointer; font-size: 17px; font-weight: 700; min-height: 44px; display: flex; align-items: center; gap: 10px; list-style: none; }
+details.re-old > summary::-webkit-details-marker, details.re-more > summary::-webkit-details-marker { display: none; }
+details.re-old > summary::before, details.re-more > summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(-45deg); transition: transform .2s; flex: none; }
+details.re-old[open] > summary::before, details.re-more[open] > summary::before { transform: rotate(45deg); }
+.re-meth { font-size: 15px; line-height: 1.6; max-width: 85ch; color: var(--ink2); }
+.re-meth h3 { font-size: 16px; margin: 16px 0 4px; color: var(--ink); }
+.re-meth p { margin: 0 0 8px; }
+.rx-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; padding: 16px; color: var(--ink3); font-size: 14px; }
+.rx-fail::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--alert); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .55; transition: opacity .3s; }
+@media (prefers-reduced-motion: reduce) { .re-vb .fil, .re-gauge .fil, .re-dm .row .t span, .re-adv input, .re-adv input::after { transition: none; } }
+.re-foot { position: relative; background: var(--ink); color: #C9D2DC; font-size: 14px; }
+.re-foot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--grad); }
+.re-foot .re-wrap { padding-block: 28px; display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; align-items: center; }
+.re-foot .re-logo { color: #FFFFFF; font-size: 18px; }
+.re-foot p { margin: 0; }
+
+/* ===== Hoja de mercado: papel claro, reglas finas, una sola tinta de acento ===== */
+.re { --bg: #FBFAF6; --paper: #FBFAF6; --soft: #ECEEE7; --line: #DCDFD6; --rule: #DCDFD6; --up: #1F7A4D; --down: #A23B2A; font-size: 16px; }
+.re-wrap { max-width: 1240px; }
+
+/* Cabecera de periódico */
+.re-mast { border-bottom: 1px solid var(--rule); background: var(--paper); }
+.re-mast-in { display: flex; justify-content: space-between; align-items: center; gap: 8px 24px; padding-block: 16px; flex-wrap: wrap; font-size: 14px; color: var(--ink3); }
+.re-mast .re-logo { font-size: 19px; color: var(--ink); }
+.re-logo .c { margin-left: 5px; }
+.re-mast .re-asof b { color: var(--ink); }
+@media (max-width: 760px) { .re-mast-t { display: none; } }
+
+/* Portada: primero el precio */
+.re-top .re-wrap { padding-block: 40px 48px; display: flex; flex-direction: column; gap: 14px; }
+.re-title { margin: 0; font-size: clamp(26px, 3.2vw, 38px); font-weight: 800; line-height: 1.12; letter-spacing: -.02em; max-width: 30ch; text-wrap: balance; }
+.re-sub { margin: 0; font-size: 17px; line-height: 1.6; color: var(--ink2); max-width: 62ch; }
+.re-hero { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 64px; margin-top: 18px; }
+.re-hd2 { container-type: inline-size; display: flex; flex-direction: column; min-width: 0; }
+.re-hd2 .re-ftag { color: var(--ct); }
+.re-hd2 .re-shr { margin-top: 12px; }
+@media (max-width: 900px) { .re-hero { grid-template-columns: 1fr; gap: 32px; } .re-hd2:nth-child(3) { margin-top: 12px; border-top: 1px solid var(--rule); padding-top: 28px; } }
+@media (max-width: 560px) { .re-sub { display: none; } .re-sp { height: 46px; } .re-px b { font-size: 56px; } }
+.re-hc { container-type: inline-size; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+.re-hc .hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; }
+.re-hc .hd img { height: 30px; width: auto; }
+.re-hc .hd span { font-size: 14px; color: var(--ink3); text-align: right; }
+.re-px { display: flex; align-items: baseline; gap: 10px; margin-top: 10px; line-height: 1; }
+.re-px small { font-size: 22px; font-weight: 600; color: var(--ink3); }
+.re-px b { font-size: clamp(54px, 7vw, 84px); font-weight: 800; letter-spacing: -.035em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.re-chg { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink2); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.re-chg .v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
+.re-chg .v svg { flex: none; }
+.re-chg.baja .v { color: var(--down); }
+.re-chg.sube .v { color: var(--up); }
+.re-chg.igual .v { color: var(--ink2); }
+.re-sp { position: relative; height: 64px; margin-top: 8px; cursor: crosshair; touch-action: pan-y; }
+.re-sp svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.re-sp .dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--paper); pointer-events: none; }
+.re-sp .dot.h { background: var(--ink); }
+.re-sp .vl { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink); pointer-events: none; }
+.re-sp:focus-visible { outline: 2px solid #074A97; outline-offset: 6px; box-shadow: none; }
+.re-spcap { margin: 0; font-size: 14px; color: var(--ink3); min-height: 21px; font-variant-numeric: tabular-nums; }
+.re-spcap b { color: var(--ink); font-weight: 700; }
+.re-shr { margin-top: 22px; }
+.re-shr .t { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--ink2); margin-bottom: 8px; }
+.re-shr .t b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.re-shr .trk { position: relative; height: 12px; background: repeating-linear-gradient(90deg, #C9CEC2 0 2px, transparent 2px 6px); }
+.re-shr .fil { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c); }
+.re-shr .fil.go { animation: re-shrink 1.6s cubic-bezier(.3, .7, .2, 1) .2s both; }
+@keyframes re-shrink { from { width: 100%; } }
+.re-say { margin: 12px 0 0; font-size: 18px; line-height: 1.5; font-weight: 400; color: var(--ink2); text-wrap: pretty; }
+.re-say b { font-weight: 800; color: var(--ink); }
+.re-kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 14px 0 0; border-top: 1px solid var(--rule); padding-top: 14px; }
+.re-kv > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.re-kv dt { font-size: 14px; color: var(--ink2); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.re-kv dd { margin: 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.re-kv .d { font-size: 13px; color: var(--ink3); line-height: 1.4; }
+@container (max-width: 460px) { .re-kv { grid-template-columns: 1fr; gap: 12px; } .re-kv > div { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; } .re-kv dd { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 22px; } }
+.re-actions { margin-top: 18px; gap: 8px 28px; }
+.re-cta { border-radius: 4px; background: var(--azul); }
+.re-cta:hover { background: #063B78; }
+
+/* Franja de cotización: aparece al dejar atrás la portada */
+.re-tick { position: absolute; left: 0; right: 0; top: 100%; background: var(--paper); border-bottom: 1px solid var(--rule); opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s; }
+.re.tick-on .re-tick { opacity: 1; transform: none; pointer-events: auto; }
+.re-tick .re-wrap { display: flex; align-items: center; gap: 8px 28px; min-height: 40px; font-size: 14px; color: var(--ink2); overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+.re-tick .re-wrap::-webkit-scrollbar { display: none; }
+.re-tq { display: inline-flex; align-items: center; gap: 10px; }
+.re-tq .f { font-weight: 800; color: var(--ct); }
+.re-tq .p { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.re-tq .c { font-weight: 700; font-variant-numeric: tabular-nums; }
+.re-tq .c.baja { color: var(--down); } .re-tq .c.sube { color: var(--up); }
+.re-tq svg { display: block; }
+.re-tick .dt { color: var(--ink3); margin-left: auto; }
+@media (max-width: 560px) { .re-tq svg, .re-tick .dt, .re-tq .dsc { display: none; } .re-tick .re-wrap { gap: 20px; } }
+.re-menu { z-index: 2; }
+
+/* Barra de navegación: texto subrayado, sin cápsulas */
+.re-sticky { background: rgba(251, 250, 246, .96); }
+.re-sel, .re-seg { background: none; border: 0; border-radius: 0; padding: 0; gap: 4px 18px; }
+.re-sel button, .re-seg button, .re-nav button { border-radius: 0; padding: 0 2px; background: none; border-bottom: 2px solid transparent; color: var(--ink2); }
+.re-sel button[aria-pressed="true"], .re-seg button[aria-pressed="true"], .re-nav button[aria-current="true"] { background: none; color: var(--ink); border-bottom-color: var(--ink); }
+.re-nav { gap: 2px 18px; }
+.re-nav button:hover, .re-sel button:hover, .re-seg button:hover { background: none; color: var(--ink); }
+.re-sel button i { box-shadow: none; }
+.re-menu-btn { border-radius: 4px; }
+.re-adv input { background: #B9C3B1; }
+.re-adv input:checked { background: var(--azul); }
+
+/* Capítulos numerados con título en columna lateral */
+.re-main { counter-reset: ch; gap: 0; padding-block: 0 64px; }
+.re-sec { border-top: 1px solid var(--rule); padding-block: 48px 56px; gap: 22px; scroll-margin-top: 108px; counter-increment: ch; }
+.re-band { background: none; box-shadow: none; clip-path: none; padding-block: 48px 56px; }
+.re-kicker { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 600; color: var(--ink3); }
+.re-kicker::before { content: counter(ch) "."; font-weight: 800; color: var(--azul); font-variant-numeric: tabular-nums; }
+#s-metodologia { counter-increment: none; }
+.re-h2 { font-size: clamp(24px, 2.4vw, 28px); line-height: 1.2; letter-spacing: -.015em; margin-top: 8px; }
+.re-h2::after { display: none; }
+.re-h3 { font-size: 19px; }
+.re-lead { font-size: 18px; line-height: 1.65; max-width: 62ch; }
+@media (min-width: 1081px) {
+  .re-sec { display: grid; grid-template-columns: 250px minmax(0, 1fr); column-gap: 56px; row-gap: 0; align-items: start; }
+  .re-sec > * { grid-column: 2; margin-bottom: 22px; }
+  .re-sec > :last-child { margin-bottom: 0; }
+  .re-sec > .re-sh { grid-column: 1; grid-row: 1 / span 30; position: sticky; top: 124px; flex-direction: column; align-items: flex-start; gap: 20px; }
+  #s-metodologia > * { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) { .re-sec, .re-band { padding-block: 36px 40px; } .re-top .re-wrap { padding-block: 28px 36px; } .re-px small { font-size: 18px; } }
+
+/* Sin tarjetas: reglas finas y espacio */
+.re-card, .re-dm, .re-prof, .rx-vm, .re-ev, .re-fact, .re-kpi { background: none; border: 0; border-radius: 0; box-shadow: none; }
+.re-card { border-top: 1px solid var(--rule); padding: 20px 0 0; }
+.re-card.fc { border-top: 2px solid var(--c); }
+.re-dm, .re-prof, .rx-vm, .re-ev { border-top: 1px solid var(--rule); padding: 16px 0 0; }
+.re-ev { box-shadow: none; border-top: 2px solid var(--c); }
+.re-tlc { box-shadow: none; }
+.re-kpi { border-top: 1px solid var(--rule); padding: 12px 0 0; }
+.re-ftag { font-size: 15px; letter-spacing: 0; }
+.re-ftag i { border-radius: 2px; }
+.re-insight { background: none; border: 0; border-radius: 0; padding: 0; font-size: 20px; font-weight: 500; line-height: 1.5; max-width: 60ch; }
+.re-badge { background: none; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: var(--ink3); padding: 0; border-radius: 0; }
+.re-badge::before { content: "("; } .re-badge::after { content: ")"; }
+.rx-cat { background: none; border: 0; border-top: 1px solid var(--rule); border-radius: 0; padding: 14px 2px 10px; }
+.rx-cat:hover { border-color: var(--ink); }
+.rx-cat[aria-pressed="true"] { border: 0; border-top: 3px solid var(--c); padding: 12px 2px 10px; background: var(--tint); }
+.rx-vm .pair > div { background: none; border-radius: 0; padding: 4px 0 0; border-top: 2px solid var(--c); }
+.re-card.re-tlc { border-top: 2px solid var(--c); }
+.rx-scroll, .rx-detail { border-radius: 0; border-left: 0; border-right: 0; }
+.rx-detail { border: 0; border-top: 1px solid var(--rule); padding: 14px 0 0; }
+.rx-filters input, .rx-filters select { border-radius: 4px; }
+.re-field input[type="text"] { border-radius: 4px; background: #FFFFFF; }
+.re-res { background: none; color: var(--ink); border-radius: 0; padding: 0 0 16px; border-bottom: 1px solid var(--rule); }
+.re-res .k, .re-res .d { color: var(--ink2); }
+.re-res .v { color: var(--azul); font-size: clamp(34px, 4.4vw, 52px); letter-spacing: -.02em; }
+.re-out { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 16px; }
+.re-out .o .v { font-size: 20px; }
+.re-q4 a { display: block; }
+.re-out .o { background: none; border: 0; border-radius: 0; border-top: 1px solid var(--rule); padding: 12px 0 0; }
+.re-ev .cal { border-radius: 0; background: none; border: 0; border-top: 2px solid var(--ct); width: 64px; }
+.re-ev .cal .mo { background: none; color: var(--ct); text-transform: none; font-size: 14px; padding: 4px 0 0; }
+.re-ev .cal .dy { font-size: 30px; padding: 0; }
+.re-tip, .re-pop { border-radius: 4px; }
+.rx-tree .cell { border-radius: 0; border-width: 1px; border-color: var(--paper); }
+.rx-hb .r .t, .rx-hb .r .f, .re-gauge .trk, .re-gauge .fil, .re-dm .row .t, .re-dm .row .t span, .rx-cat .mini, .rx-cat .mini > span, .rx-stack { border-radius: 0; }
+.re-q > button { background: var(--paper); }
+.re-foot { background: none; color: var(--ink3); border-top: 1px solid var(--rule); }
+.re-foot::before { display: none; }
+.re-foot .re-logo { color: var(--ink); }
+.re-rg { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.re-rg .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; font-size: 14px; color: var(--ink2); }
+.re-rg .h .k { font-weight: 700; color: var(--ink); }
+.re-rg .h b { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.re-rg .bar { position: relative; height: 6px; background: var(--soft); margin: 4px 7px; }
+.re-rg .fl { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--c) 35%, #FFFFFF); }
+.re-rg .pt { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--paper); }
+.re-rg .ends { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.re-rg .ends b { color: var(--ink); font-weight: 700; }
+.re-rg .ends small { display: block; font-size: 13px; color: var(--ink3); }
+.re-rg .hi { text-align: right; }
+@media (prefers-reduced-motion: reduce) { .re-shr .fil.go { animation: none; } .re-tick { transition: none; } }
+.re-aviso { max-width: 70ch; margin-top: 4px; }
+.re-foot .re-legal { flex-basis: 100%; max-width: 110ch; line-height: 1.6; }
+</style>
+
+<div class="re" data-sel="AMBOS" data-mode="cliente" id="re">
+  <header class="re-mast">
+    <div class="re-wrap re-mast-in">
+      <div class="re-logo" role="img" aria-label="Real Estate by MPF"><span class="a">REAL</span><span class="b">ESTATE</span><span class="c">by MPF</span></div>
+      <span class="re-mast-t">Monitor de fondos inmobiliarios listados en Colombia</span>
+      <span class="re-asof">Cierre BVC del <b data-source="fichas" data-where="fondo=PEI" data-field="fecha" class="dash-skeleton">—</b></span>
+    </div>
+  </header>
+
+  <section class="re-top" id="s-precio" aria-labelledby="precio-title">
+    <div class="re-wrap">
+      <h1 class="re-title" id="precio-title">PEI y TIN en la Bolsa de Valores de Colombia</h1>
+      <p class="re-sub">Los dos fondos inmobiliarios que cotizan en Colombia. Cada título es una parte de un portafolio de inmuebles en arriendo. Aquí está su precio de cierre, cuánto cambió frente al día anterior y cómo se compara con el valor patrimonial que reporta cada administrador.</p>
+      <div class="re-hero" id="hero" data-source="fichas precios"></div>
+      <div class="re-actions">
+        <button type="button" class="re-cta" data-go="s-simulador">Abrir la calculadora</button>
+        <button type="button" class="re-link" data-go="s-historico">Ver cómo ha cambiado el descuento</button>
+      </div>
+      <p class="re-note re-aviso">Información educativa elaborada con datos públicos. Real Estate by MPF no presta asesoría de inversión ni recomienda comprar, mantener o vender estos títulos.</p>
+    </div>
+  </section>
+
+  <div class="re-sticky" id="re-sticky">
+    <div class="re-tick" id="re-tick" data-source="fichas precios" aria-label="Cotización de PEI y TIN"><div class="re-wrap"></div></div>
+    <div class="re-wrap re-sticky-in">
+      <div class="re-sel" role="group" aria-label="Fondo">
+        <button type="button" data-sel="AMBOS" aria-pressed="true">Ambos</button>
+        <button type="button" data-sel="PEI" aria-pressed="false"><i style="background:var(--pei)"></i>PEI</button>
+        <button type="button" data-sel="TIN" aria-pressed="false"><i style="background:var(--tin)"></i>TIN</button>
+      </div>
+      <nav class="re-nav" id="re-nav" aria-label="Secciones">
+        <button type="button" data-go="s-precio">Precio</button>
+        <button type="button" data-go="s-resumen">Resumen</button>
+        <button type="button" data-go="s-pagos">Pagos</button>
+        <button type="button" data-go="s-portafolio">Portafolio</button>
+        <button type="button" data-go="s-riesgos">Riesgos</button>
+        <button type="button" data-go="s-historico">Histórico</button>
+        <button type="button" data-go="s-valoracion" class="an">Valoración</button>
+        <button type="button" data-go="s-simulador">Calculadora</button>
+        <button type="button" data-go="s-reportes">Calendario</button>
+      </nav>
+      <label class="re-adv"><input type="checkbox" role="switch" class="adv-in"><span>Vista avanzada</span></label>
+      <button type="button" class="re-menu-btn" id="re-menu-btn" aria-expanded="false" aria-controls="re-menu">Secciones <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="re-menu" id="re-menu" hidden>
+      <div class="re-wrap">
+        <button type="button" class="go" data-go="s-precio">Precio</button>
+        <button type="button" class="go" data-go="s-resumen">Resumen</button>
+        <button type="button" class="go" data-go="s-pagos">Pagos</button>
+        <button type="button" class="go" data-go="s-portafolio">Portafolio</button>
+        <button type="button" class="go" data-go="s-riesgos">Riesgos</button>
+        <button type="button" class="go" data-go="s-historico">Histórico</button>
+        <button type="button" class="go an" data-go="s-valoracion">Valoración</button>
+        <button type="button" class="go" data-go="s-simulador">Calculadora</button>
+        <button type="button" class="go" data-go="s-reportes">Calendario</button>
+        <label class="re-adv"><input type="checkbox" role="switch" class="adv-in"><span>Vista avanzada (métricas para analistas)</span></label>
+      </div>
+    </div>
+  </div>
+
+  <main class="re-wrap re-main">
+    <!-- RESUMEN -->
+    <section class="re-sec" id="s-resumen">
+      <div class="re-sh"><div><div class="re-kicker">Resumen</div><h2 class="re-h2">Los dos fondos en cifras</h2></div></div>
+      <p class="re-lead">Tamaño, vacancia, liquidez e inversionistas de cada fondo, y quién lo administra.</p>
+      <div class="re-topic re-only-both">
+        <h3 class="re-h3">Otros indicadores</h3>
+        <div class="re-duel" id="duel" data-source="fichas"></div>
+      </div>
+      <div class="re-topic re-only-one">
+        <h3 class="re-h3">Datos del fondo</h3>
+        <div class="re-g3" id="facts" data-source="fichas"></div>
+      </div>
+      <div class="re-topic">
+        <h3 class="re-h3" id="prof-title">Qué son PEI y TIN</h3>
+        <div class="re-g2" id="perfiles" data-source="composicion"></div>
+      </div>
+    </section>
+
+    <!-- PAGOS -->
+    <section class="re-sec" id="s-pagos">
+      <div class="re-sh"><div><div class="re-kicker">Pagos</div><h2 class="re-h2" id="pg-title">Cuánto reparten PEI y TIN</h2></div></div>
+      <p class="re-lead">Los fondos reparten a sus inversionistas parte del arriendo que cobran. Estos pagos se llaman distribuciones. Aquí está lo que pagó cada fondo por título en cada trimestre y cuántos inversionistas tiene.</p>
+      <div class="re-topics">
+        <div class="re-topic"><h3 class="re-h3">Distribución por título, COP <span id="q-dist"></span></h3><div class="re-fg" id="pg-dist" data-source="indicadores"></div></div>
+        <div class="re-topic"><h3 class="re-h3">Inversionistas</h3><div class="re-fg" id="pg-inv" data-source="indicadores"></div></div>
+        <div class="re-topic an"><h3 class="re-h3">NOI por trimestre, COP mil millones <span class="re-badge">Avanzado</span></h3><div class="re-fg" id="pg-noi" data-source="indicadores"></div></div>
+      </div>
+      <details class="re-card re-more an">
+        <summary>Tabla trimestral completa</summary>
+        <div class="rx-tw">
+          <table class="rx-t" id="tabla" data-source="trimestral" data-row-key="fondo,trimestre">
+            <thead><tr>
+              <th data-field="fondo">Fondo</th><th data-field="trimestre">Trimestre</th><th data-field="nav">Valor patrimonial por título (COP)</th><th data-field="titulos">Títulos</th><th data-field="activos">Activos (COP millones)</th><th data-field="num_activos">Número de activos</th><th data-field="gla">Área (m²)</th><th data-field="vac_f">Vacancia física</th><th data-field="vac_e">Vacancia económica</th><th data-field="deuda">Deuda (COP millones)</th><th data-field="ltv">Endeudamiento (LTV)</th><th data-field="kd">Costo de la deuda</th><th data-field="noi">NOI (COP millones)</th><th data-field="dist">Distribución (COP millones)</th><th data-field="dist_tit">Por título (COP)</th><th data-field="inv">Inversionistas</th><th data-field="walt">Plazo de contratos (años)</th><th data-field="fuente">Fuente</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="re-note">En cursiva, cálculos propios a partir de la fuente. Pasa el cursor sobre una fila para ver sus notas.</p>
+      </details>
+    </section>
+
+    <!-- PORTAFOLIO -->
+    <section class="re-sec" id="s-portafolio">
+      <div class="re-sh"><div><div class="re-kicker">Portafolio</div><h2 class="re-h2" id="pf-title">Qué tiene</h2></div>
+        <div class="re-ctrl re-pf"><span class="re-lbl" id="pf-lbl">Ver portafolio de:</span><div class="re-seg" role="group" aria-labelledby="pf-lbl"><button type="button" data-pf="PEI" aria-pressed="true">PEI</button><button type="button" data-pf="TIN" aria-pressed="false">TIN</button></div></div></div>
+      <p class="re-lead" id="pf-lead"></p>
+      <div class="re-card">
+        <h3 class="re-h3">Tipos de activo</h3>
+        <p class="re-note">Selecciona un tipo para filtrar el mapa y la lista de activos de mayor valor.</p>
+        <div class="rx-cats" id="cats" data-source="composicion activos"></div>
+        <p class="re-note" id="cats-n"></p>
+      </div>
+      <div class="re-card pf-tree">
+        <div class="re-sh"><h3 class="re-h3">Mapa del portafolio</h3><span class="re-note" id="tree-n"></span></div>
+        <p class="re-note">Cada recuadro es un inmueble y su tamaño es proporcional a su valor. Pasa el cursor o selecciona uno para ver sus datos.</p>
+        <div class="rx-tree" id="tree" data-source="activos"></div>
+        <div class="re-legend" id="tree-leg"></div>
+        <div class="rx-pick" id="tree-pick" data-source="activos"></div>
+        <p class="re-note" id="tree-cnt" data-source="activos fichas"></p>
+      </div>
+      <div class="re-g2">
+        <div class="re-card"><h3 class="re-h3">Por ciudad</h3><div id="ciu" data-source="composicion activos"></div><p class="re-note" id="ciu-n"></p></div>
+        <div class="re-card"><h3 class="re-h3" id="top-title">Diez activos de mayor valor</h3><div id="top" data-source="activos"></div><p class="re-note" id="top-n"></p></div>
+      </div>
+      <div class="re-card an">
+        <div class="re-sh"><h3 class="re-h3">Explorador de activos <span class="re-badge">Avanzado</span></h3></div>
+        <div class="rx-filters">
+          <input type="search" id="f-q" placeholder="Buscar por nombre, ciudad o dirección" aria-label="Buscar activo">
+          <select id="f-cat" aria-label="Tipo"></select>
+          <select id="f-ciu" aria-label="Ciudad"></select>
+          <span class="re-note" id="f-count"></span>
+        </div>
+        <div class="rx-exp">
+          <div class="rx-scroll">
+            <table class="rx-t" id="tact" data-source="activos" data-row-key="id">
+              <thead><tr><th data-field="nombre"><button type="button" data-sort="nombre">Activo</button></th><th data-field="categoria"><button type="button" data-sort="categoria">Tipo</button></th><th data-field="ciudad"><button type="button" data-sort="ciudad">Ciudad</button></th><th data-field="valor_cop"><button type="button" data-sort="valor_cop">Valor (COP millones)</button></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="rx-detail" id="detail" data-source="activos"></div>
+        </div>
+        <p class="re-note" id="act-n"></p>
+      </div>
+    </section>
+
+    <!-- RIESGOS -->
+    <section class="re-sec re-band" id="s-riesgos">
+      <div class="re-sh"><div><div class="re-kicker">Riesgos</div><h2 class="re-h2" id="rk-title">Qué riesgos tienen PEI y TIN</h2></div></div>
+      <p class="re-lead">Cuatro frentes para revisar: cuánto debe cada fondo frente a su límite, a qué tasa, qué parte del portafolio está vacía y qué tan concentrados están sus arrendatarios.</p>
+      <div class="re-topics">
+        <div class="re-topic"><h3 class="re-h3">Endeudamiento frente al límite <span id="q-ltv"></span></h3><div class="re-fg" id="rk-ltv" data-source="fichas indicadores"></div></div>
+        <div class="re-topic"><h3 class="re-h3">A qué tasa está la deuda</h3><div class="re-fg" id="rk-tasa" data-source="deuda indicadores"></div></div>
+        <div class="re-topic"><h3 class="re-h3">Vacancia <span id="q-vac"></span></h3><div class="re-fg" id="rk-vac" data-source="indicadores"></div></div>
+        <div class="re-topic"><h3 class="re-h3">Concentración de arrendatarios</h3><div class="re-fg" id="rk-arr" data-source="composicion fichas"></div></div>
+        <div class="re-topic wide" id="rk-tin-wrap"><h3 class="re-h3">Sector económico y vencimiento de contratos de TIN</h3><div class="re-fg" id="rk-tin" data-source="composicion"></div></div>
+      </div>
+    </section>
+
+    <!-- HISTORICO -->
+    <section class="re-sec" id="s-historico">
+      <div class="re-sh"><div><div class="re-kicker">Histórico</div><h2 class="re-h2">Cómo se han movido</h2></div></div>
+      <div class="re-card">
+        <div class="re-ctrl" style="justify-content:space-between">
+          <div class="re-seg" id="h-view" role="group" aria-label="Qué ver"><button type="button" data-v="desc" aria-pressed="true">Descuento</button><button type="button" data-v="pv" aria-pressed="false">Precio y valor patrimonial</button><button type="button" data-v="tr" aria-pressed="false">Rentabilidad total</button></div>
+          <div class="re-seg" id="h-per" role="group" aria-label="Periodo"><button type="button" data-v="1" aria-pressed="false">1 año</button><button type="button" data-v="3" aria-pressed="false">3 años</button><button type="button" data-v="0" aria-pressed="true">Todo</button></div>
+        </div>
+        <p class="re-insight" id="h-insight" data-source="fichas"></p>
+        <div class="re-legend" id="h-leg"></div>
+        <div class="re-chart lc" id="ch-hist" data-source="precios indicadores eventos_tabla descuento_serie"></div>
+        <p class="re-note" id="h-note"></p>
+      </div>
+      <div class="re-card">
+        <h3 class="re-h3">Eventos que movieron a los fondos</h3>
+        <p class="re-note">El número de cada evento es el mismo de la gráfica.</p>
+        <div class="rx-tw">
+          <table class="rx-t" id="tabla-eventos" data-source="eventos_tabla" data-row-key="fondo,fecha">
+            <thead><tr><th data-field="n">N°</th><th data-field="fecha_txt">Fecha</th><th data-field="fondo">Fondo</th><th data-field="evento" class="txt">Evento</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VALORACION -->
+    <section class="re-sec an" id="s-valoracion">
+      <div class="re-sh"><div><div class="re-kicker">Valoración <span class="re-badge">Avanzado</span></div><h2 class="re-h2">Las métricas que usan los analistas de REITs</h2></div></div>
+      <p class="re-lead">Los fondos inmobiliarios listados en Estados Unidos (REITs) se analizan con un conjunto estándar de métricas. Aquí están calculadas para PEI y TIN con las cifras de sus informes.</p>
+      <p class="re-insight" id="val-insight" data-source="valoracion"></p>
+      <div class="re-topic"><h3 class="re-h3">Cap rate implícito en el precio frente al de los avalúos <span id="q-cap"></span></h3><div class="re-fg" id="v-cap" data-source="caprate_serie"></div><p class="re-note">Implícito: NOI de los últimos 12 meses sobre el valor de mercado del fondo más su deuda, al cierre de cada trimestre. Avalúos: el mismo NOI sobre los activos bajo administración.</p></div>
+      <div class="rx-val" id="val-grid" data-source="valoracion"></div>
+      <div class="re-topic"><h3 class="re-h3">Cobertura de intereses por periodo <span id="q-icr"></span></h3><div class="re-fg" id="v-icr" data-source="finanzas"></div><p class="re-note">EBITDA sobre gasto financiero. PEI reporta trimestres y gasto financiero neto; TIN publica EBITDA solo para años completos.</p></div>
+    </section>
+
+    <!-- SIMULADOR -->
+    <section class="re-sec re-band" id="s-simulador">
+      <div class="re-sh"><div><div class="re-kicker">Calculadora</div><h2 class="re-h2">Qué representa un monto en títulos</h2></div></div>
+      <p class="re-lead">Ejercicio aritmético con datos públicos. Para un monto hipotético muestra cuántos títulos equivalen al último precio de cierre, qué valor patrimonial representan, cuánto pagaron en distribuciones los últimos 12 meses y cómo cambiaría su valor de mercado con otro descuento. No es una proyección ni una recomendación de inversión, y no considera comisiones, impuestos ni el perfil de riesgo de cada persona.</p>
+      <div class="re-sim">
+        <div class="re-card">
+          <div class="re-field re-pf"><span id="s-fondo-l">Fondo</span><div class="re-seg" id="s-fondo" role="group" aria-labelledby="s-fondo-l"><button type="button" data-v="PEI" aria-pressed="true">PEI</button><button type="button" data-v="TIN" aria-pressed="false">TIN</button></div></div>
+          <label class="re-field" for="s-monto"><span>Monto hipotético (COP)</span><input type="text" id="s-monto" inputmode="numeric" value="10.000.000"></label>
+          <div class="re-field"><label for="s-desc">Si el descuento cambia a: <span class="val" id="s-desc-v"></span></label><div class="re-range"><input type="range" id="s-desc" min="0" max="80" step="1" value="30"><span class="mk" id="s-mk"></span></div></div>
+          <p class="re-note" id="s-ref"></p>
+        </div>
+        <div class="re-sim-r" id="sim-out" data-source="precios indicadores"><div class="re-res" id="s-res"></div><div class="re-out" id="s-out"></div><p class="re-note" id="s-foot"></p></div>
+      </div>
+    </section>
+
+    <!-- CALENDARIO -->
+    <section class="re-sec" id="s-reportes">
+      <div class="re-sh"><div><div class="re-kicker">Calendario</div><h2 class="re-h2">Calendario de reportes</h2></div></div>
+      <p class="re-lead">Próximos eventos y los informes trimestrales publicados, con enlace al documento original.</p>
+      <div class="re-next" id="rep-next" data-source="reportes"></div>
+      <div class="re-g2" id="rep-tl" data-source="reportes"></div>
+    </section>
+
+    <!-- METODOLOGIA -->
+    <section class="re-sec" id="s-metodologia">
+      <details class="re-card re-more">
+        <summary>Metodología y fuentes</summary>
+        <div class="re-meth">
+          <h3>Qué son PEI y TIN</h3>
+          <p>PEI y TIN no son fondos de inversión colectiva: son títulos emitidos por un patrimonio autónomo (PEI) y por un programa de titularización (TIN). En este tablero los llamamos fondos inmobiliarios para simplificar. Sus pagos a inversionistas se llaman distribuciones.</p>
+          <h3>Precios</h3>
+          <p>Cierre diario de la Bolsa de Valores de Colombia, actualizado cada día hábil en la mañana. PEI negocia en renta variable desde el 22 de agosto de 2022, después de su split. TIN pasó a renta variable en mayo de 2025 con un split; hasta el 20 de enero de 2026 su precio de referencia fue el valor patrimonial sin operaciones, por lo que el análisis de TIN empieza el 21 de enero de 2026.</p>
+          <h3>Valor patrimonial por título</h3>
+          <p>Lo que valen los inmuebles según sus avalúos, menos las deudas, dividido por el número de títulos. PEI lo reporta explícitamente desde 1T 2026; para 1T de 2023, 2024 y 2025 se calcula como patrimonio sobre títulos. Para TIN, los valores anteriores al split se expresan en la base actual de títulos.</p>
+          <h3>Descuento</h3>
+          <p>Uno menos el precio de cierre sobre el último valor patrimonial disponible a esa fecha. Un valor negativo sería una prima.</p>
+          <h3>Pagos de los últimos 12 meses</h3>
+          <p>Suma de la distribución por título de los cuatro últimos trimestres cerrados, sobre el último precio. En PEI es el flujo de caja distribuible de cada trimestre; en TIN, la suma de los pagos mensuales de cada trimestre según su fecha de pago.</p>
+          <h3>Rentabilidad total</h3>
+          <p>Índice con base 100 al inicio del periodo que suma al precio las distribuciones acumuladas por título, sin reinvertirlas. La fecha de cada distribución se aproxima a 45 días después del cierre del trimestre.</p>
+          <h3>Activos</h3>
+          <p>PEI: avalúos 2025 de la tabla de inmuebles del Informe Anual; la fuente no publica ciudad ni área por activo. TIN: valor en libros a diciembre de 2024 del último informe que lista los inmuebles uno a uno; dirección y ciudad del reglamento de emisión. Los porcentajes de arrendatarios y sectores de TIN se asignaron según el orden de las etiquetas de sus gráficas y están marcados para verificar.</p>
+          <h3>Métricas de valoración</h3>
+          <p>NOI, EBITDA y gasto financiero de las presentaciones de resultados y estados financieros de cada emisor. El gasto financiero de PEI es neto. Las series de bonos de PEI vienen de BRC Ratings (fuente secundaria).</p>
+        </div>
+      </details>
+    </section>
+  </main>
+  <!-- Espacio para el formulario de captura de leads (lo agrega el equipo) -->
+
+  <footer class="re-foot"><div class="re-wrap">
+    <div class="re-logo" role="img" aria-label="Real Estate by MPF"><span class="a">REAL</span><span class="b">ESTATE</span><span class="c">by MPF</span></div>
+    <p class="re-legal">Real Estate by MPF publica esta herramienta con fines exclusivamente educativos e informativos. No constituye asesoría ni recomendación de inversión, ni una oferta o invitación a comprar o vender valores. Los datos provienen de fuentes públicas (Bolsa de Valores de Colombia y documentos de cada emisor) y pueden tener errores o rezagos. Los resultados pasados no garantizan resultados futuros. Antes de tomar una decisión de inversión, consulta los documentos oficiales de cada emisor y, si lo necesitas, a un asesor autorizado por la Superintendencia Financiera de Colombia.</p>
+    <p>Fuentes: BVC, Pei Asset Management, Fiducoldex, Titularizadora Colombiana.</p>
+  </div></footer>
+</div>
+
+<script>
+dash.calc('fichas', {
+  title: 'Ficha de cada fondo',
+  description: 'Último cierre y cambio frente al cierre anterior, último valor patrimonial, descuento, distribuciones de 12 meses y últimos indicadores trimestrales de cada fondo, formateados.',
+  inputs: ['precios', 'indicadores'],
+  fn: (precios, indicadores) => {
+    const nf = (v, d = 0) => (v == null || !isFinite(v)) ? 'n.d.' : v.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const pct = (v, d = 1) => (v == null || !isFinite(v)) ? 'n.d.' : nf(v * 100, d) + '%';
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const fdate = (s) => { const d = new Date(s + 'T00:00:00Z'); return d.getUTCDate() + ' ' + MESES[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+    const tq = (t) => t.replace('Q', 'T').replace(/^(\dT)(\d{4})$/, '$1 $2');
+    const out = [];
+    for (const f of ['PEI', 'TIN']) {
+      const P = precios.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+      const last = P[P.length - 1];
+      const Q = indicadores.filter((r) => r.fondo === f && r.fecha_corte <= last.fecha).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      const lq = (k) => { for (let i = Q.length - 1; i >= 0; i--) if (Q[i][k] != null) return Q[i]; return null; };
+      const navQ = lq('nav_por_titulo'), titQ = lq('titulos');
+      const ratio = navQ ? last.cierre / navQ.nav_por_titulo : null;
+      const dist = Q.filter((r) => r.distribucion_por_titulo_cop != null).slice(-4);
+      const dsum = dist.length === 4 ? dist.reduce((s, r) => s + r.distribucion_por_titulo_cop, 0) : null;
+      const dy = dsum == null ? null : dsum / last.cierre;
+      const y1 = new Date(Date.parse(last.fecha) - 365 * 864e5).toISOString().slice(0, 10);
+      const prev = P.filter((r) => r.fecha <= y1).pop();
+      const v12 = prev ? last.cierre / prev.cierre - 1 : null;
+      const l21 = P.slice(-21);
+      const vol = l21.reduce((s, r) => s + (r.volumen_cop || 0), 0) / l21.length;
+      const N = indicadores.filter((r) => r.fondo === f && r.nav_por_titulo != null).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      let j = -1; const ds = [];
+      for (const p of P) { while (j + 1 < N.length && N[j + 1].fecha_corte <= p.fecha) j++; if (j >= 0) ds.push(1 - p.cierre / N[j].nav_por_titulo); }
+      const cur = ratio == null ? null : 1 - ratio;
+      const pctl = ds.length && cur != null ? ds.filter((x) => x <= cur).length / ds.length : null;
+      const pv = P.length > 1 ? P[P.length - 2] : null;
+      const dd = pv ? last.cierre / pv.cierre - 1 : null;
+      const sg = (v) => v > 0 ? '+' : v < 0 ? '\u2212' : '';
+      const q = (k, fmt) => { const r = lq(k); return r ? fmt(r[k]) : 'n.d.'; };
+      const qt = (k) => { const r = lq(k); return r ? tq(r.trimestre) : ''; };
+      out.push({
+        fondo: f,
+        fecha: fdate(last.fecha),
+        fecha_iso: last.fecha,
+        precio: 'COP ' + nf(last.cierre),
+        precio_n: nf(last.cierre),
+        fecha_ant: pv ? fdate(pv.fecha) : 'n.d.',
+        cierre_ant: pv ? 'COP ' + nf(pv.cierre) : 'n.d.',
+        var_dia: dd == null ? 'n.d.' : sg(dd) + nf(Math.abs(dd * 100), 2) + '%',
+        var_dia_cop: pv ? sg(dd) + 'COP ' + nf(Math.abs(last.cierre - pv.cierre)) : 'n.d.',
+        var_dia_dir: dd == null ? 'nd' : dd > 0 ? 'sube' : dd < 0 ? 'baja' : 'igual',
+        nav: 'COP ' + nf(navQ && navQ.nav_por_titulo),
+        nav_corte: navQ ? tq(navQ.trimestre) + (navQ.nav_origen === 'calculado' ? ', calculado' : '') : 'n.d.',
+        descuento: pct(cur),
+        por_mil: 'COP ' + nf(ratio == null ? null : ratio * 1000),
+        precio_pct_nav: pct(ratio, 0),
+        dy: pct(dy, 1),
+        dist_millon: 'COP ' + nf(dy == null ? null : dy * 1e6),
+        dist_12m_titulo: 'COP ' + nf(dsum, f === 'TIN' ? 2 : 0),
+        var12: v12 == null ? 'n.d.' : (v12 > 0 ? '+' : '') + pct(v12),
+        vol: 'COP ' + nf(vol / 1e6) + ' millones',
+        cap: 'COP ' + nf(titQ ? last.cierre * titQ.titulos / 1e9 : null) + ' mil millones',
+        percentil: pct(pctl, 0),
+        percentil_n: pctl == null ? 'n.d.' : nf(pctl * 100, 0),
+        ltv: q('ltv_pct', (v) => nf(v, 1) + '%'), ltv_t: qt('ltv_pct'),
+        kd: q('costo_deuda_pct', (v) => nf(v, 2) + '%'), kd_t: qt('costo_deuda_pct'),
+        vac_f: q('vacancia_fisica_pct', (v) => nf(v, 2) + '%'), vac_f_t: qt('vacancia_fisica_pct'),
+        vac_e: q('vacancia_economica_pct', (v) => nf(v, 2) + '%'), vac_e_t: qt('vacancia_economica_pct'),
+        inversionistas: q('inversionistas', (v) => nf(v)), inv_t: qt('inversionistas'),
+        activos: q('activos_cop', (v) => 'COP ' + nf(v / 1e9) + ' mil millones'), activos_t: qt('activos_cop'),
+        gla: q('gla_m2', (v) => nf(v) + ' m²'), gla_t: qt('gla_m2'),
+        num_activos: q('numero_activos', (v) => nf(v)), num_activos_t: qt('numero_activos'),
+        arrendatarios: q('arrendatarios', (v) => nf(v)), arr_t: qt('arrendatarios'),
+        walt: q('walt_anios', (v) => nf(v, 1) + ' años'), walt_t: qt('walt_anios'),
+      });
+    }
+    return out;
+  },
+});
+
+dash.calc('descuento_serie', {
+  title: 'Descuento diario',
+  description: 'Para cada cierre con negociación continua, uno menos el precio sobre el último valor patrimonial por título con corte anterior o igual.',
+  inputs: ['precios', 'indicadores'],
+  fn: (precios, indicadores) => {
+    const out = [];
+    for (const f of ['PEI', 'TIN']) {
+      const N = indicadores.filter((r) => r.fondo === f && r.nav_por_titulo != null).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      const P = precios.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+      let j = -1;
+      for (const p of P) {
+        while (j + 1 < N.length && N[j + 1].fecha_corte <= p.fecha) j++;
+        if (j < 0) continue;
+        out.push({ fondo: f, fecha: p.fecha, cierre: p.cierre, nav: N[j].nav_por_titulo, descuento: 1 - p.cierre / N[j].nav_por_titulo });
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('trimestral', {
+  title: 'Tabla trimestral',
+  description: 'Indicadores trimestrales de cada fondo formateados en COP, millones de COP y porcentajes.',
+  inputs: ['indicadores'],
+  fn: (indicadores) => {
+    const nf = (v, d = 0) => (v == null || !isFinite(v)) ? '' : v.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const pc = (v, d = 2) => v == null ? '' : nf(v, d) + '%';
+    const mm = (v) => v == null ? '' : nf(v / 1e6);
+    return indicadores.map((r) => ({
+      fondo: r.fondo, trimestre: r.trimestre, fecha_corte: r.fecha_corte,
+      nav: nf(r.nav_por_titulo), titulos: nf(r.titulos), activos: mm(r.activos_cop), num_activos: nf(r.numero_activos), gla: nf(r.gla_m2),
+      vac_f: pc(r.vacancia_fisica_pct), vac_e: pc(r.vacancia_economica_pct), deuda: mm(r.deuda_cop), ltv: pc(r.ltv_pct), kd: pc(r.costo_deuda_pct),
+      noi: mm(r.noi_trimestre_cop), dist: mm(r.distribucion_trimestre_cop), dist_tit: nf(r.distribucion_por_titulo_cop, r.fondo === 'TIN' ? 2 : 0),
+      inv: nf(r.inversionistas), walt: nf(r.walt_anios, 2), fuente: 'Informe', fuente_url: r.fuente_url,
+      calculados: r.campos_calculados || '', notas: r.notas || '',
+    }));
+  },
+});
+
+dash.calc('valoracion', {
+  title: 'Métricas de analista',
+  description: 'Precio sobre valor patrimonial, cap rate implícito y de avalúo, deuda sobre EBITDA, cobertura de intereses, reparto sobre NOI, precio sobre distribución, crecimiento de la distribución, deuda a tasa variable y rotación, con los últimos 12 meses reportados.',
+  inputs: ['precios', 'indicadores', 'finanzas', 'deuda'],
+  fn: (precios, indicadores, finanzas, deuda) => {
+    const nf = (v, d = 0) => (v == null || !isFinite(v)) ? 'n.d.' : v.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const pct = (v, d = 1) => (v == null || !isFinite(v)) ? 'n.d.' : nf(v * 100, d) + '%';
+    const xx = (v, d = 1) => (v == null || !isFinite(v)) ? 'n.d.' : nf(v, d) + 'x';
+    const tq = (t) => t.replace('Q', 'T').replace(/^(\dT)(\d{4})$/, '$1 $2');
+    const out = [];
+    for (const f of ['PEI', 'TIN']) {
+      const P = precios.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+      const last = P[P.length - 1];
+      const I = indicadores.filter((r) => r.fondo === f && r.fecha_corte <= last.fecha).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      const lq = (k) => { for (let i = I.length - 1; i >= 0; i--) if (I[i][k] != null) return I[i]; return null; };
+      const nav = lq('nav_por_titulo'), tit = lq('titulos'), deu = lq('deuda_cop'), act = lq('activos_cop');
+      const FQ = finanzas.filter((r) => r.fondo === f && r.tipo === 'trimestre').sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      const FA = finanzas.filter((r) => r.fondo === f && r.tipo === 'anual').sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      let noi = null, noiB = '';
+      const fq4 = FQ.filter((r) => r.noi_cop != null).slice(-4);
+      const iq4 = I.filter((r) => r.noi_trimestre_cop != null).slice(-4);
+      if (fq4.length === 4) { noi = fq4.reduce((s, r) => s + r.noi_cop, 0); noiB = fq4[0].periodo.replace(/^(\dT)/, '$1 ') + ' a ' + fq4[3].periodo.replace(/^(\dT)/, '$1 '); }
+      else if (iq4.length === 4) { noi = iq4.reduce((s, r) => s + r.noi_trimestre_cop, 0); noiB = tq(iq4[0].trimestre) + ' a ' + tq(iq4[3].trimestre); }
+      let eb = null, gf = null, ebB = '';
+      const e4 = FQ.filter((r) => r.ebitda_cop != null && r.gastos_financieros_cop != null).slice(-4);
+      if (e4.length === 4) { eb = e4.reduce((s, r) => s + r.ebitda_cop, 0); gf = e4.reduce((s, r) => s + r.gastos_financieros_cop, 0); ebB = e4[0].periodo.replace(/^(\dT)/, '$1 ') + ' a ' + e4[3].periodo.replace(/^(\dT)/, '$1 '); }
+      else if (FA.length) { const a = FA[FA.length - 1]; eb = a.ebitda_cop; gf = a.gastos_financieros_cop; ebB = a.periodo; }
+      const D = I.filter((r) => r.distribucion_trimestre_cop != null && r.distribucion_por_titulo_cop != null);
+      const d4 = D.slice(-4), d8 = D.slice(-8, -4);
+      const distTot = d4.length === 4 ? d4.reduce((s, r) => s + r.distribucion_trimestre_cop, 0) : null;
+      const distTit = d4.length === 4 ? d4.reduce((s, r) => s + r.distribucion_por_titulo_cop, 0) : null;
+      const distPrev = d8.length === 4 ? d8.reduce((s, r) => s + r.distribucion_por_titulo_cop, 0) : null;
+      const cap = tit ? last.cierre * tit.titulos : null;
+      const ev = cap != null && deu ? cap + deu.deuda_cop : null;
+      const capI = noi && ev ? noi / ev : null;
+      const capA = noi && act ? noi / act.activos_cop : null;
+      const X = deuda.filter((r) => r.fondo === f && r.dimension === 'indexacion').sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+      const lastF = X.length ? X[X.length - 1].fecha : null;
+      const ibr = X.filter((r) => r.fecha === lastF && r.categoria === 'IBR');
+      const y1 = new Date(Date.parse(last.fecha) - 365 * 864e5).toISOString().slice(0, 10);
+      const vol12 = P.filter((r) => r.fecha > y1).reduce((s, r) => s + (r.volumen_cop || 0), 0);
+      const yrs = (Date.parse(last.fecha) - Date.parse(P[0].fecha)) / (365 * 864e5);
+      const rot = cap ? vol12 / Math.min(1, Math.max(yrs, 0.01)) / cap : null;
+      out.push({
+        fondo: f,
+        pvp: xx(nav ? last.cierre / nav.nav_por_titulo : null, 2),
+        cap_impl: pct(capI, 1),
+        cap_aval: pct(capA, 1),
+        spread: capI != null && capA != null ? nf((capI - capA) * 100, 1) + ' pts' : 'n.d.',
+        deuda_ebitda: xx(eb && deu ? deu.deuda_cop / eb : null, 1),
+        icr: xx(eb && gf ? eb / gf : null, 1),
+        payout: pct(distTot != null && noi ? distTot / noi : null, 0),
+        p_dist: xx(distTit ? last.cierre / distTit : null, 1),
+        dist_crec: distTit != null && distPrev ? (distTit >= distPrev ? '+' : '') + pct(distTit / distPrev - 1, 1) : 'n.d.',
+        var_ibr: ibr.length ? nf(ibr[0].pct, 1) + '%' : 'n.d.',
+        rotacion: pct(rot, 0),
+        noi_base: noiB || 'n.d.',
+        ebitda_base: ebB || 'n.d.',
+        idx_corte: lastF ? new Date(lastF + 'T00:00:00Z').toLocaleDateString('es-CO', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'n.d.',
+      });
+    }
+    return out;
+  },
+});
+
+dash.calc('caprate_serie', {
+  title: 'Cap rate por trimestre',
+  description: 'Al cierre de cada trimestre: NOI de 12 meses sobre valor de mercado más deuda (implícito) y sobre activos bajo administración (avalúo).',
+  inputs: ['precios', 'indicadores', 'finanzas'],
+  fn: (precios, indicadores, finanzas) => {
+    const out = [];
+    for (const f of ['PEI', 'TIN']) {
+      const P = precios.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+      const I = indicadores.filter((r) => r.fondo === f).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      const FQ = finanzas.filter((r) => r.fondo === f && r.tipo === 'trimestre');
+      const noiAt = (fc) => {
+        const src = FQ.length ? FQ.map((r) => ({ fc: r.fecha_corte, v: r.noi_cop })) : I.map((r) => ({ fc: r.fecha_corte, v: r.noi_trimestre_cop }));
+        const s = src.filter((r) => r.fc <= fc && r.v != null).sort((a, b) => a.fc < b.fc ? -1 : 1).slice(-4);
+        if (s.length < 4 || s[3].fc !== fc) return null;
+        if ((Date.parse(s[3].fc) - Date.parse(s[0].fc)) / 864e5 > 280) return null;
+        return s.reduce((a, r) => a + r.v, 0);
+      };
+      for (const q of I) {
+        if (q.deuda_cop == null || q.activos_cop == null || q.titulos == null) continue;
+        const noi = noiAt(q.fecha_corte); if (noi == null) continue;
+        const p = P.filter((r) => r.fecha <= q.fecha_corte).pop();
+        if (!p || (Date.parse(q.fecha_corte) - Date.parse(p.fecha)) / 864e5 > 10) continue;
+        out.push({ fondo: f, fecha: q.fecha_corte, implicito: noi / (p.cierre * q.titulos + q.deuda_cop), avaluo: noi / q.activos_cop });
+      }
+    }
+    return out;
+  },
+});
+
+dash.calc('eventos_tabla', {
+  title: 'Eventos numerados',
+  description: 'Hechos relevantes de cada fondo en orden cronológico, con un número para ubicarlos en la gráfica del histórico y la fecha en formato corto.',
+  inputs: ['eventos'],
+  fn: (eventos) => {
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return eventos.slice().sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0).map((r, i) => {
+      const d = new Date(r.fecha + 'T00:00:00Z');
+      return { fondo: r.fondo, fecha: r.fecha, fecha_txt: d.getUTCDate() + ' ' + MESES[d.getUTCMonth()] + ' ' + d.getUTCFullYear(), n: i + 1, evento: r.evento, fuente_url: r.fuente_url };
+    });
+  },
+});
+</script>
+<script>
+(() => {
+  const R = document.getElementById('re');
+  const es = (v, d = 0) => v.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const parse = (s) => new Date(s + 'T00:00:00Z');
+  const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const fmtD = (d) => d.getUTCDate() + ' ' + MES[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  const tipD = d3.utcFormat('%d/%m/%Y');
+  // Colores: PEI Azul Sólido, TIN Turquesa Cercano (texto en turquesa oscuro), series secundarias en gris, eventos en violeta.
+  const COL = { PEI: '#074A97', TIN: '#089598' };
+  const TXT = { PEI: '#074A97', TIN: '#067A7C' };
+  const TINT = { PEI: '#EBF1F7', TIN: '#E6F4F5' };
+  const SEC = '#5E6873', INK = '#0E1B2C', EVC = '#A73CE6';
+  const NAME = { PEI: 'Patrimonio Estrategias Inmobiliarias', TIN: 'Títulos Inmobiliarios, Titularizadora Colombiana' };
+  const LOGO = {"PEI": "data:image/webp;base64,UklGRk4mAABXRUJQVlA4WAoAAAAQAAAA4gAAXwAAQUxQSOwPAAABwEbb1rI9zfa5zvXGg7t7LTjU3T11F6wuuH1Sb3FpSt3dXXCr4YwWd3dIXtJAQ55L1o/nfp/7fu4kL38jYgL0+NX0xN8/Vss5u+nxa7AN7qZSWbJrbyxGjz6tcn2fFUDi0r64Gi1Mn0zrPlwrQKUnQfPe/Y3fnvhSycN0yfVsCo2lH0EvuJ7hMxZIPk0yrTtZ6lClF66nJ1LOqfDYd7eT+bRIru/yWKUOOLcPZmvdRmI4w8MHSBamQ2Yb3gYFHtypD1H7kmiuCS55uxRt+iPTJj+a5NHfPEF9dP2m5imgFjh9B8mnPzJpk2dvLYV+/IVRoGSWfHUzyac9siApBPXjBzWNBBke3D8ohOmOZB7UvccQYpjq9bShJrjsjVK06c44LajRbUghXsyKFlAz/OFJUhyLTdmVNa4kZh49Rg9m47Hmbkx6wVfOPv2YXaRokkxb3EIpLaBk/nPK5pKPYYwhRg9qdI9u/Qoxmkb1GKy7cVqY+BHD5cSNJZcUtOVPIZUWkOGBD7lC6GzWWo2z2oSoxjXXWmuttSY07G59MQ+StNbGL1r42tcufM3Wa0VJitaRrbnW8BqdhPA7cso5wQOHzVFwKUjPuRJyG2qCS98iuXUS9ZXJBycnF0+e42YjeJD0xL2++rtzHpqcXDJ53R9+echr1pfkoQ8WJW2z93f+tmQZjcsnr/n1Qbu75KED05q3TS6ZnFzy4Is7iHoPK2jMcO1CyU3mmn3wzZBbQM3w2ydJsZuf03jzhKYKkrb9xOWFlg/95PVrSG5jc2n2236/nOGSh2m86v82ltw6WGsZjW/vwHRlyU3UBKc/W3KTS/OOT9TSAkrm0RM3lHkXP6qDWnO9Zipz6W2nPwKklHMdLjmnAtxxwg5SHE8IWu+wq4GUcq001lpyAhZ/ZSfJO1hSS625vqld0OaPUqeAUuCEeZLLorTbryHVFpDhzg8FhdDuxyQoXDuFS8/7J5BKpWXNBR47eh2ZjSFK77kZcq60LwnSonUVrNUkFQpv7mL3UkeBXLn+kJnyIHPpRVdCakNNcOnbpWjjidriR5WcK53WBHd9UPLOXLucBanQcU1w+zukMAbzGMNUptn31zISZPj3iyU3haA5h90DuQXUDD9/iuRjsKDX30vNTF1rybnU2gQ1w4/ny7sx017/JRWmrDk15lIboCY4doa8M9eweZNcPyG1oGT48e5SNLm03jGZUlpAyTx28oaKnVnQJyAxZUmZKXOqDVAT1+2k2IW5HQOZ5pIKo6bSACVx/rryjoJmPP+1r32iFMIUTxiU1AJKJX1pTcllUdrzN5BqC8hw7yvkHQWzn5ALjTUDLJ28/KyzbpqsQM51CDKPvEqxnZm+Rao05gwsOf9Xpxx11Am//PMdA6i5DkHiiu3knZj2vxEYnPMKKZokud4DubaABLcfPiEPMpde/W/IbagJDlToxHzGzxnQWDNw0dGv3mAtSTPX3nmvn94PlAYyK96s2MY8/pBEYy1w2wkvXktTzn3iEZcCpYHE3U+Sd6EToeQM/HoHKUpS0Cv/Aam2oGa4+GWSm4JrzkF3UXMLKJUnKnQww/UrBjRmuOekp6kxBA2vs9/piVyHKLU+V95iQseTaMxw3j5rSDKPMUZ3SXr5j1aQGkhcNDdYB+9iUICaC48ev5Hkklza927ILaAm+OOeUjS5tO4JhVpaMGCRYgez9FkGNGbSUWtLFt3MJLMQXdJul0AZotQ7n6wwkutQBjRmFu8tKbppSgtR0tMvo9YhEmd7tHZXlkJzhrs/4rIguWmDE5dSSgsohcFn15VcFqWn/QVSHa3Uy6JZqxv1Xga1IXPWHlIMGt1ikB+wjDxE5kp3G8H19JJrQ+ZPWyhEU1uPmvWFXMsQAz4tb8eoNcElb5Y8SC5t+0vItQVkuPOjUR5kLr38Csh1lMqS+Wp3+XbLSgGoma+5oqnDYNrtJtIQAxbJpzKfew0FoBa+KEV16tLCQS1DNeVnyFvVUaBmOG1HyU0WpVdcDKm2oGa47JmSm0LQvP+/G/JID8zr4LI/kAFq4cMKro4ntNF55CESr5RP4TqBxHCqB8iDOrYJvTbVClC4dl6wNrQtmRU/eYoUpeAK+z4AuQXUTPn17pJLLq33pUQd5cF2kKgMJw5QNHXumnU+eahw6+xgDcF2TLkODThM0dR91EuW5wqQOFxxTJDhsU/MkVxy0+aLlpFLCyiVcvQ8KciitOdvSx0PleHE5zRD43RteV8tAJl95Q1RPyUBZH6oCdM4J/Qm8lApd842Gxc1w/UfDvIgubTtbyDVFpDh+o+5gmRRc5ZRx9OY+VuINha5nkFDqTfNDSYp2HaPlgoUrpkfTOOd0CIyQObDimODmuHiZ0lusii97mJItQVkuHCBgmRhg//0oZTFWypozBP6LBkg80FFSa5vkoCalz9NrjGbz7ipFqDU2+eYjQ9Kpv5mDymaQlA4eDHkNpTEA9takGm9XmQ+qKhxW5h5Sy1D9XI3KWijZbUCiZ8pauxR7yEDZN6u2AcolXL8+pJLLm3+xcfIpQUMOFW9Kdw3J9jY5NqbDFDzkxQU9WYyUCu7Bx+fhVnXkofqLxT6ARnuOHimgsuitOBUyLUFhd0VepI4VK7xW5hxDQVIHKwo1zdrAjJ/tInQwxn27obCzVF9gQxXLJRCkEXprRdAqqOleqBiP2pdso5ZDxR1GAnInK9gNvMGClB4uvp6EwWoPFOhs1raUBOc9gIpmkKQ7/8A5NE4oC+JH8vVx6CdqUBl6UaKeiLDlfuettPOO/Vx1wW/JwOJwxS7Wg6ptIBS4OdbSVFyabMvP0KuK8fbLfZCNvMGCpB5vmbqvWSGS6WvheHMb+XdZE571U2QagvIlYePWk/mkksL/sKo/ankBQr9iPoOGUgcpln6DKmh95mLLXR1ntY86GbIbSDDXftJwWRResudta4Ek+vI+nIAqeEUzdQZ5Kba26bK4vUVOjrXpTVPWk4tbagJznulZFKY0HGk3mUuCqZ+ul5DafiGZujsqfpeKVvKu1KI0k4/hFRaQM3wszkyKfpJK8Xp8p4Ebc1w5lRF/WOKnHo+SMs37+w8mSxKz/475NoCcuJPM90UdeJKcUaPnjDFBQq6ZIqVcavOzlCQFFxh36sh1Rawgo8prkb+qaALmlYcdcjhh/X60MP3n6vQSeLPDZJLMz+8GHKbUm6cMFtZTu/RNlOcraizGkpZoJXROsmcK2uQubTlSUupebRaB09UWFkuCdYT1wspQOK7mqFzGjKvjDNj33sgmUtbfx9KGYXCs+QrR+XhdWT9iDqI1PAlzdIJJCBxpKL63wPJovSSP0Ia7RkrT36SQj9cPyA3HK5Z+kgdyvxMvmqSgktvvppVApl3KPbDZt9AATIv1Aw9nQoUbpuhVZXkrtmfWFrqKiDx454E7VCpUJncQEHz7qYCNe9ooR/RrX9SlP5NWQVUFq9n1oeoI0lA5kwFuX5MBhLHy/shKXr/zCauWiWQOFyxDyFcQQESH1NUtI+RgMrSDcx6YPrwC02yaH2TXblqKPWOucHG59qXDFDT9goK2mFQATJfUByf23PhmqOepubVEJkPKI7Nwrw7awFyvdxNUtDpNQO1LN3YwtiizskD4IKPbGTW3XmrtFomt7Qwrgl9mswQH1SU5Ho5Q2R+qQkbU9ReZEqqcJRid2et0sicLbfxuJ69Ileg1JvmB5Mkt9NrBsgcpInxuHZ8rFSgpsktFLpK/Fa+iqpDJI7ThI3DtfGtFIDM2+Vq0PNpqKm+SBPjcG10IwUg8RW5VjuFOkTiYEXrzjXnX2SAUq+bGdTs9hcyQK2PPE8T1plrjUvJAKUs2SyE1U3h0tPJQzVxmIJ3ZBPa4CIyw4mXy6cItsWyXAEKyxYqhG5sQtv+m8xw4j1yrX4uf8IjuTKcOVaK1kWQ9riazPCARYqa2vUBBkMUOFSK1s6i9Ny7yAwnzpRrNXSj3k1qqIlz95CitzB3TRyygsxw5pq5wUYw1y9IQ9TCmU+V3MMo5lHa4LhCZrhw1xYhrI6unaUTGAxBJn1qXUnRQ4OF6JKefgEUhnN9eFe5RjWfcS5pCDKDYzaXZDF6CCHGIGlivzuoheFSliyQa7U0I+gXDBrIcNfRz9Toa73r1EquDBdWPFOu0YPWvYnUQIbJn799U40494UnXw2JxlJ5vaJWTxPmM7/DoA5RM3Dp51/6xIa1d9znp3cDhcbMfxYqqq1r26tIDdQM/Pcfnz/4OQsW7PT+w/9wG5ArjZnlb1VUF3VV80A3CtJPKHUIaqpAvfrKK6+68l6AnGlOLHuGotq71r+AVIeg5szINRWaE0terqhOGOVUhZVl6ShL5ndj5joKUgNQUmHKnCvNNXH10xTVpWvW9yA1ADWnVKk1pVyYMmeu2ElR3SwpdYryTcWVZP1HpipcM9O6kbkWLqaWJqCW4crUNcPv15Cr2yDt/QAlN3VZMnxztlwdfYtBQx3wXPlKoTBxeclNg3q8orqRXFv/EnKuTW1rgrs/JLm6Ntc234GSahc1Z/jrq6Wgrja4ikEuJWVOkWvYPLr1KmovBnWoJJ4u70wuPfdiIJVWNRdYcdJaCqYxRukFpwIllTpSzQm48YOSmzrTZhfRuEjBJJlr2PukoOOoKaUE/yNXdwqu8I5TVwA55dKcUyrAbUfvLLnGG1x6/jfvAChpylyAR/6892yZq61prYdyynmQ3xTke/3mtqu+9iyZSTJpw1fv/Zw5Ct4jBX02ASzbX0HjkFzSEz59OW0nf/vmOZKbxu4mzVv4nRsZ+Z7TPriVJFd709qFxrfLJE2YFCTJNOeIh4Fb9pPc+iPXkz/xpUWHbifXmGQeJO26z0m/vXL4iisv+MZnXrKRpBjUS4+S4k4vPuKYU775ja8f9/k3Pmu+pOCmTmbvtffe++yzz94bS+YuRZekENa8BEqqcM5LJO+PghpdY5MUotoHN/XWPKpliEH9NFOj62usqEDJcMp8Be+NQowxBvVCUogxyCSZLEY39dyCxxg9xhjdTeOMzdYwZdCTyJXGXLjlnZKHvnQ5ltV61IFkpk5w6hOkq9udMN1bVNMIlMx/jl7z0nYnj7T/dOzI0SDDdfdR23y+jlAPnX65dqaMRs2M2uB6PnmKwgvl0y0L4TRWjAaltrEQL2fQMOBcBU23FGzt+0l1tJEbFLTHUlJKaUDdRT79UtCCX0OuY1HQC65g+IZXKGgaJpPeey+Uscg1Y69vf+/b+89T0LRMwbX+NwakOg4FNbumaZJLO10IeRyyOGyavslcfuR9lDKGfk5zpCBt8i3I9fGMFKVXXwK5zdMfX8hcMz+xnFpGe/bjDMmlnf8IqY4wWKDwOEPm0utuhtyUy9UyPd6Qgmv9kx+lVKBk3iZ/HCK5tOAMgAr/I1e/ftJ0/bRHFmUfuK2W8q/3ytWz7zVdHG11B1ZQOCA8FgAA0FwAnQEq4wBgAD4xFohDIiEhFBrOFCADBLIAQkIeL2j8bPyM+Syrf1777/kPzsbVfP55V/0X3CdqP82ewB+lH9+6nfmA/kP9X/a73Qv8N/rv937m/QA/pv+G9Zv/Rex3/TP9V7AH8g/qvqw/6v9nPgY/Zv/2f8f4CP5h/XP+/1gHoAdiF/O/wm/U75Y+F32f8f/3I8zP0L9w/Jj91P8B0yOqPFT9nvvf9x/cz2i/4Hiv8T9Qj8n/mP+U8Rn+m733Q/8b/o/UF9Qfnf+V+5r0fP7j0b+rn+n9wD+LfzT/Nf2f9x/7N///m3/F/4byHvqv+O/u/3VfYB/F/5t/jP69/if+D/fP//9rv8D/r/8j/lf/J/wfat+Y/3L/b/4H91/79///wD/jP8u/yP9o/w3/X/wv///832seuP9ofYc/Uj5/201uQQItm1WR3S8FQ7xAwPVTWoYDa5ms/Fogo0PvcM36SyA0Xf3Eb7qcqJbmzCIxKiybHDILbCWLNLV0hebGitjN1jeWBx/B2+z71Fc3K4LMhSFV2FGVscAGKl/z/elemgm9Y/R6UCU33QbaF19992E1pf+OP6GVqMg7XKezV6BmlDmpZSPrcekrp/MIkhpUfvULu2YkbjB+8cS0XTnvfnXmr6GE1a5VzQqqfTBBs95XXlze06746qiLh+CuTWQ6P03Rka/Mr8wqpfSIpqKZBr99CffS/98Bzo63ZoDoxySTqu/pkeKHsyzAJLkrxs3cR1rgRUk2HS4rlF0WUG0Q/pkPSF2tVb+AF40ySDlw/ZCZPjMUkOoCaUkOnNmn7fOfigBS/4EiWuvylvkETlmDDkshHdvTJ7ptB+gBPF9wYa3srygbEDbWJo31L1/5nn4epBz4+Pz6jTNq+VUKpCh47AG3LS7i3vFkEPf2LhzinmYfJH//zqB823T8lgD3Ojvzogr0l9astV1Yw0dXAK9kazVze+i1YTSYsqsn709bJjdzBpDa0b6HrFne0J9UAAD+/2AfT9Bd3bCQVJ+XX3AEnY9qr8w0o/u7li0+IxuJOECrysVjDLVEO3qfBccyUa5rW2jSq/+w8zy4v0MPsprW6a4S+/u92Y3onGZiZ7ogjJtGqTRUF++7Gf6tlSG+EB3EFLbcOCjwgHS9nNfQDHHfYJHGvA19R1CgELLyD9+VWLvedEOkSktWEj85MjZ+LSKjA8/jD7MhIhpPIexcny/PJokxXHBU9+65xCrntbGYv319HqWX4LZQF9fZyCp3o/r9F8iKAPRLJVoUtbipsO5Fr6/XpkC1jMD9Zn2uj4ujgropp9Jk58e9ocw2ddn3VBaRFuYQLIqeNHBcZfGFhGLSvd9hMgqiQOVI2RzE9r7a1PTr/h+92d0UjvwVDAIa7aLWI2T05lM6NFfu/rsRpRHNHC908hmpyQOE3ga8pWsUq5dLwUxXVFF044P0APd9f5uAAAPfgBL+eM38nHza8ogSprbv4fGJYNX9Nsf1ahmkjBI8jCkcu5iG7zhtqdSfaROqR1I/AnjZtmjNPqWqdQCuz5TssxZ6H2wT4f8YvPwj60KzJtYBi4Wkeyz+aG2GD1Qw3MKLuFOnHUjfh1Ld+qcBDm7X7lAuIkeq/TSbSVGEHZZBhGUB48AZcOFZjzhWZWJkvTHI6AIeSPCcPVlIzmUO9pcbvIvHjxbvp7i+l333FeBkD7O+D8vZSf6FbBW2My3UVUI0sZNA8ujSnW1NFcttND0hU/wuVwmjqm3O0UQFvqMwAq7S3G0/1BfMmh6hwMUHjNxYk7ni162L5tHwXE6IgSsi/ETdcE+pFv1mZRWa+jBPPNX8AK7CKYxcIVBX8VQhb6eYJxrYgpcGyeDEwkOc7HsOb7AM4U9sMoIF5uA61aMOfzUEB4zRl7h///NqKGByMq1CjubH5XXqcEASv1+sq/YSwI/RWDnYihJ//wG+RlUHWOuM6OkA2ThUlxUaj+qOwjj8wMjeX6w2vtFRB7d2i8k7DdOGhrMS/r/UkrxlLWzKwrXs8mh7Rv0YvdoV6AjnfWvqy3A/988INNWE+1E99Ej6L7yyo+M7EqGUcsAMbluNDjBGdTIezz983HfkpugcmurP+kB7avC5QMXZz3SgZx4lqvcI0858rpHx65mREORCfO6RUJ5wpnnbfyPQN5To62sGW6WlikTcL2WlEMRTWwF9hnSnQVAX3jAlOPH3d1eSMlb22p58QorvX5p+a/vbTN/9DhGvVTE2GF8GBnfh4zaNwHLnEDCc44gIowM395PiIakQ4trOqLyMFxwRuHQx1C9Isa4NgiPt2OtF2gdenllXi19aJ4zzpvb/mwWYpyCRtBAACpAMGgvJsWIvH4vokWxDwlz6KQPHHXJCiloko0saxPcodIcxczpvF8BFuNTSG7ixQ4iGuPYvXxoDlWjGzQ/k46d6pe17hei2CSIVSDiJNz17uJ3cAAKE6Znxf7sQX6o5jfnwnNveugP1JetXP5N62mBrxUsKhW0aClsGG0y8k0oWzPAHMHOj6CvP9P9xWBA+1OMMsN2k6xxMGTOnrhoide1UX/dvf4Vj9rx4U80qCDCqYKJstri9B2FUp4I+p8VZYscnhw/IbuSfMxCZ5TRg7OasoZyMNBLxBh+m+DflsikMd1TukM/zsGx2gXujcloLEIwdlXfn6ISSeECZu3BIFXTPZ5+V9LOFspavnyyKj7IeYnh6hd8e6FMLY4XL79/ie/aHvNQ6hPAIniI46kpztjiE3u79px90zbzb/4k/lbBrTSYjxFxmxBnZm3RgLL3dZRvpv1a54sjIOn25jqJzjXNOY6BaBIk5Ni+5OU500UXxDGVmTV7fwO2n7qYaTNiN5Uaf6s4W/8Bp/2v5Adf91M2JH6wyOUwhfSbGAa+bJU38QEcjzYis5Djqi7e/38BkG0YXF9VdXPgV+UKzhEV3/x6XxbwHiKHKTpaUlIIPJhMsSyFdPtz6mPVNsFFNqAam0afhTD77d+WwmFrM8A/cmT3pGelHPNp+eneoue/QSmDYK42ChFAZOUj5OGaoi7GnLJJdFmjuSPLZykkwadNphCoHk+SZhOvomk/hh3MCtd8d0hir8TT7OkQr2MZzviNlkHDzfYPI/TNfXzfHNl4MSbUYDG7GmnVyyqCMqQJvtWMhFV9jzvFbqUi8HiFrBJ34TB9NseJaT/ZbXo7UbOfaGUiW8HJqOZt2wFTkzabQDNOL6hDIRvYsjrQKcqwKmcK7uLU+HcPczWp/GnVDQEm/g02UrGYN6rgVrZvMzspMt5G1qtfuzUfe32yTae9m9KKB+7ovc30fSFcp7sLZgw3sPqm9S7scIabSzfJh1Cxe0cfsj9K9C4tqlp7vJ0HQRit4pbxEqLnZnfZx5F7eW7G2Yz/qbcqdc32qyxG0Xv5VYXVtA/Q35LvRTRhiSWr+9ilcB+0iKSshq+82kw5FNYR2K49dy4Cqq8lfgznhL2CdSkyJnb9PS1jRXP/Wh0UPZTc2TEUtmM4o+CqntKqts7xDIGWWs6UeGbxMn3MkeDmJL9Xarg+NZluYbCZPVXLnnAvVaLTL3F12R1K9FVsP5oZROYVADM+yrejCOkFob4kPh+d2Lg86LIb2hwrSVAi1Z13/cv0Qxv9ngANehs5RRyx1wJ346W+eAMXCm/N595sBw5qkLqwhuepUlamBHyRi/seaslv88kjuPUwkkATVExJoSo6oK+cHEKUYAO5Q9yGxek1zzmbvtiwM92gA8J5FBZdgW98gfHIn80IGBr2npha3NutDTzqW7Jg8CftGnwN2yBehWdDmqpHQcnPa9430n7whOO+1cOywDymwKgDRz627xo4lJrGbgP4s4QghBIzvVRVnfEJ5/f4/pLuFoGdiFLwJMP3hFtLQJboKLXvPcaG2OIQBS3KglqJJSffCO0Sa9gzJ7CNQ0+1tkl043qzVoNNaIMn5SpAuTsW/Gi5aERh7WRqhHk7Jj5nNRLcVkpo8ZHG/gv/p9s+it6TPQMbeKC8XHMsbkp7oFms4288j5q583VBCaFsdiVHqsaq9QuuRyWM2zII35aGNVMtSShgMvMUYydRo5Y4ncqIKhZM48wivi7nPOzsWFyYxjSsegDLkev4LmZaHFwjiD6Zt8HSYL6OBv77CcKbdbelx1JpR2U59ylJmA2Htc19D/QRrM9e45322qX38JegJ2tzZQqPZ/epCDh3idt6pr80DYPsDwwmEwvTDLRoRoNVRIXz9QK7mcDX7u/8WSbY+t9Pq74OGtL8hZwUTJaov9QQeM+5dL2T/HSklpvDZibMU5LbK1KyWE7+IdwvRlywEWHMZ8HjnPjSWDQ/FaoQVWyDoUwdNDJXYvlv15SD11T3Pq56eaBllDqhl7ylLJIysM1SxcRzuHqg/Pmnu6j5MA4SpPRLbifzy5f79EMVISTShTlpHZ3t28eNiT3yJS7bd5pj+1LhyAqYNulBMVNvZYuG9PiyHEeoMVLjyjTa7QFQ7PfLjH3r9EuI9i3f/oU2uHwwmMQU+oad5MlK12+F0NDgn82AAOt1HorolSAdrjT2MuzeX38C0l2wUbL3gykQua+9Kn1LDOjK0bfJwK1SmNeUiCxpKevg7s7YOVdsVmT8l9wSJq+o8/XA6cdJOKq+k/vapoal/q2WIsr7iojSyOUn+v8dRsLaIaHR1N+obINIlA2oOeotbfPkGgeHfeDqsVrFKS4YyKGiX5qTStyc8/SoKzFBWRLY/19ub+nO5epbq9vOHun5raEosUIjIoSvk9qanpujCVvAtks54TW43VBgxIlFnPpJ/hUQTYBkypKEd5yzpt5hfswXTmprB3FNKLCIZEYncj2AHBSMSrMfavRaOqm3ABB1P93wbL2RkmvObHrknfODPZTsTZJPbpJUCBfvS5XlQCaQXnQ9/lBMue2rETKZ/RiFf8HFmG5bewvQkLKMqIvaJ8DSACO5DGLyJljJaC5TqQR9DHHJfxWlKSVbKn1pEIw1P9fj8+NUfEUn6CxYBF3f8YHSLmRp10J+ywpTmSHX8fZ/XmKkUtG6jzETwRcP+34OqXhrn2BddbVmHszaSoDC3/zedNWZ+MCWrJJ5OQQpyBfRgkuzGNEqrR3r0+U+BUaMb986ULytmKEsOJPpl2Z6aQY/hHAFMGqrQb4OQMQA5clrVEPRP0YMFIbGlFv8ev3mECCrVUAbQfWiUXz5qJWqMvbfmwKBame+3bm/Y8TdisQW2R2DqK4wco70TcggjgWjdGeyqs2d7IulfjH2s4rleRN41KeuO+bgNMEErOe3yDRX/vTmhmBiUaS3ZecLTJ3SGYzcwtPUBT04X6FhlWX7+KlybRQAK6mtLQZWeDc+sCHfYlYGGG2WK5pkipZYio67/f7KPGcPMyrDYDXpoZrL2GCfnUxUsMXa4T07UgWhDXlQTF3HW7nDsYJYtrGg2EMYmbP+SPX6tS+PkAh6dWDzxT1CCBC9V7VhzIEzTCsHWPHn6oeHpopBZYjueo5KWFx09WB/QgmpejsxlbXrj6iXJXJ7oAqx/wE4esdYGmX9xyP+Ss/0nFCtDuXEXoVZgkOmfpVV+bMCq8LIjfUeZ6uBVSCWFHs02ru2ccvrnZ7IegzAydaQco4uaadw5FPQ4v+mgScdPT7UP4vYCyfkBXICDtEL77oguAUW3TGVncccCB0P7+8Q0xoAvj+X8Kw2QyJkEPkpC1TptiS/pV04ZQCdgrTxUG+xCFMEHdJpYocS0okGnB4ROLQIQUmCr/0FKbQiYirHT34lSIbznfdNAaq/DV+9yzhs1RH4EYuSf5BhUXeRmTqRBjw69lgCVroOuS2gWpyzSAicgzqXjud7AXL7P5oZCvc3mybOUyOdxnj6x36FVjM6oeNXGFthfWmbFaXz2A3Qv6irIY0J3lPK1gpdvGngCewnUbe5H+8jXqEF2ezoZgk1ouyMOXiOq1Llea9S1o6b8faNwMkWzgEeTtz+d9wWhHGQ97rsBlFjoQ0ZeMFB8x3lbCgHbpFCaiGh5yIMwqL4Fu657EfqgOiRm/iOoGdHUg3sY4TunO2gzDlQQewv17OZo9y2FNe+zhmyeEG7SuUaNrp8VOxoMD/Bc3oDxlBSzHveZnzVlmeq/NuBgNAgEXX8Jvy7CEu83u8dc4oMZd+XjqHNz3mJmAGfh+fsw6/2CIMrv3t3zMOL1m02QF9vZVix4rd+OEJvTbTUh39Fc0/2oYkOK+/krU3fJBWQJUQk4Ea8SF4pYaMYTgn1T3djWHwgrdIDpJUR1V8/ysiAFMQ1eQ6NG8QPSKphZTMOnCcHyzcHx9uAj+tSyM27Kl0N90xJ5gSAReKGlP3mqztQ/fo3uaepuNPE5/7zS9ZTCnvtcN4aCfuA0dcxco0+0530voeWf9GpfapQW9GhDn7MROWcCZa/LrgPy1uJDIZxyDyBB8SOb9/HheFMnYqj5Ej33FNWafKYsDwKdtWJUCopMsYIDMlvBDsz0Ha8aRzfmin8Lgd8/mAwLAy7wLR6YY1nIsUPvAL5dqXyfDrrsgIxhxfzya5Wz6+9aUaAl3z6jT5pVq91xHPoOF8RwN96E02EgspqBEh6qnRgj5ezyXagNFymo7ShOWNURx4PRR5pdzYuccRDtYGH5eT4/xLdw75VPZ8dT4BN6Bn2yI483ovGvbCfoSgo7z37Ree5a7wo/DonbNWt7AAVxkg/KLpO95I3NFFKEjOtHLtMaVnLRkokXoghYWZQJ7ZHINyI+r4t8oJMdbnUJAfEXsq5KmeER78mtWHy5rgoGarsrnH7nGoprSx94r6yEkVeMQN8n0/qgnh62aH0JhEp0l4cCffuMKvUHkuM+PoEJ3pFN/v66y5LAQ4vRlAVaFsFf2OyZ/uCAYjq7/gEJgzcnO3KWyIsWXArF5FiUr0rezpndxxN5wPB/z/m06hOMZ6CdQJUfBM9nmSK210h3KvRL5erzKJ/oCgvfZ+7Yc7zVV+moBPJy3pqcVZ8C+Wly/imEoGGdexeC47R/AaWPWKuZsQuRFtwV0KKO8OJx33lcMJic5oiaH9yTbPMAyxtnma+X0e7kK/D7RbJE353Vuv4C/ADAySGZhzh5EvkcZF7QtRdsriaNKoITIN8MQVuphV75J8LUm5rzAZebAscoK5BkTC5IYa5SbZHfKUp7T/7MxTtrJeSWm0xCBpxqlJme1B+iUiIjA/jOIsunW63KmTZLinESAOq1nZFnuvuI1Ty/cjGYauNRFqYZ1k9Mwm+IlaAOfd9TjwPGIaa8PbDTPt2ploDHYCL/Te0UuQ1sdeSTvupGFDRb+nZaNWUOJD9b8SnqyopwA+uqW+apvkLZ9NlA352ah5zNXXEfPZ9ktYLn4gHq82p7GD6Ws8jomXWcSH4jnBy7OMBvWD0UGjCQJjZr8sL1G5goJOFeFMyU6n+ELuEjt3EqjsTfZQ4ju60qeBb4KMkmsoFTL8QKPjtNVHk84xsYAEFqQkzhGBwmav+Uar2Sfpnlq73m537J1I19gXIB5/N9zox6pNqEZ8kGZ8ma1Ap80k0nJzhKuELZAmBzv5UbL5kBGuo/SrM6VeIXH9fGtvkHOTG6B9Jf9/W1a7iR6SDKWxzs4IRSlxrRwAAAAA==", "TIN": "data:image/webp;base64,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"};
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const fs = (node, f) => { node.style.setProperty('--c', COL[f]); node.style.setProperty('--ct', TXT[f]); node.style.setProperty('--tint', TINT[f]); return node; };
+  const st = { anim: false, sel: 'AMBOS', pf: 'PEI', mode: 'cliente', hView: 'desc', hPer: 0, sFondo: 'PEI', cat: null, q: '', ciu: '', sort: 'valor_cop', dir: -1, asel: null, simReady: false, prof: {} };
+  const ok = (...ids) => ids.every((i) => dash.data(i).status === 'ok');
+  const failed = (...ids) => ids.some((i) => dash.data(i).status === 'error');
+  const fail = (box) => { box.replaceChildren(el('div', 'rx-fail', 'No se pudo cargar este dato.')); };
+  const ficha = (f) => (dash.data('fichas').data || []).find((r) => r.fondo === f);
+  const funds = () => st.sel === 'AMBOS' ? ['PEI', 'TIN'] : [st.sel];
+  const pf = () => st.sel === 'AMBOS' ? st.pf : st.sel;
+  const tqs = (t) => t.replace('Q', 'T').replace(/^(\dT)\d{2}(\d{2})$/, '$1 $2');
+  const tqn = (t) => t.replace('Q', 'T');
+  const cut = (per) => per ? new Date(Date.now() - per * 365 * 864e5) : null;
+  const ind = (f) => dash.data('indicadores').data.filter((r) => r.fondo === f).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+  const num = (s) => { if (!s || s === 'n.d.') return null; const v = parseFloat(String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')); return isNaN(v) ? null : v; };
+  const qnum = (s) => { const m = /(\d)T (\d{4})/.exec(s || ''); return m ? +m[2] * 4 + +m[1] : null; };
+  let uid = 0;
+  const sgn = (v, d = 1) => (v >= 0 ? '+' : '\u2212') + es(Math.abs(v), d);
+
+  // Glosario: una sola ventana de ayuda; en móvil se abre como panel inferior.
+  const GLOS = {
+    nav: 'Lo que valen los inmuebles del fondo según sus avalúos, menos sus deudas, dividido por el número de títulos.',
+    desc: 'Diferencia porcentual entre el precio en bolsa y el valor patrimonial por título. Con 50%, el precio equivale a COP 500 por cada COP 1.000 de patrimonio.',
+    dy: 'Pagos (distribuciones) por título de los últimos cuatro trimestres cerrados, divididos por el precio de hoy.',
+    ltv: 'Deuda sobre el valor de los activos. El límite de 35% lo fija el reglamento de cada fondo.',
+    vac: 'Porción del portafolio sin arrendar. La física mide área; la económica, ingreso que no se recibe.',
+    walt: 'Años promedio que faltan para que venzan los contratos de arriendo, ponderados por ingreso.',
+    cap: 'Precio por número de títulos: lo que vale todo el fondo en bolsa.',
+    vol: 'Monto promedio negociado por día en las últimas 21 sesiones. Indica qué tan fácil es comprar o vender.',
+    inv: 'Número de inversionistas con títulos del fondo, según el último informe.',
+    dist: 'Lo que el fondo reparte a sus inversionistas por cada título, a partir del arriendo que cobra. También se llama distribución.',
+    capi: 'NOI de 12 meses dividido por el valor de mercado del fondo más su deuda. Relaciona el ingreso operativo de los inmuebles con el valor que les asigna el precio en bolsa.',
+    capa: 'NOI de 12 meses dividido por el valor de los activos según los avalúos.',
+    debitda: 'Deuda total dividida por el EBITDA de 12 meses. Métrica estándar de apalancamiento en REITs.',
+    icr: 'EBITDA dividido por el gasto financiero: cuántas veces la operación cubre los intereses de la deuda.',
+    payout: 'Distribuciones pagadas sobre NOI. Los REITs de EE. UU. lo miden sobre FFO o AFFO; aquí se usa el NOI porque los fondos colombianos no publican FFO.',
+  };
+  const pop = el('div', 're-pop'); pop.id = 're-pop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Definición');
+  const popTxt = el('p'); const popX = el('button', 'x', 'Cerrar'); popX.type = 'button'; pop.append(popTxt, popX); R.appendChild(pop);
+  let popBtn = null;
+  const closePop = (focus) => { if (pop.hidden) return; pop.hidden = true; const b = popBtn; popBtn = null; if (b) { b.setAttribute('aria-expanded', 'false'); if (focus && b.isConnected) b.focus(); } };
+  const placePop = (b) => {
+    const rr = R.getBoundingClientRect(), br = b.getBoundingClientRect();
+    if (window.matchMedia('(max-width: 560px)').matches) { pop.style.left = ''; pop.style.top = (br.bottom - rr.top + 10) + 'px'; return; }
+    const left = Math.max(16, Math.min(br.left - rr.left - 12, rr.width - pop.offsetWidth - 16));
+    pop.style.left = left + 'px'; pop.style.top = (br.bottom - rr.top + 10) + 'px';
+  };
+  const q = (k) => {
+    const w = el('span', 're-q'); const b = el('button', null, '?'); b.type = 'button';
+    b.setAttribute('aria-label', 'Qué significa'); b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-controls', 're-pop');
+    b.addEventListener('click', (e) => { e.stopPropagation(); if (popBtn === b) { closePop(); return; } closePop(); popTxt.textContent = GLOS[k]; pop.hidden = false; popBtn = b; b.setAttribute('aria-expanded', 'true'); placePop(b); if (window.matchMedia('(max-width: 560px)').matches) popX.focus({ preventScroll: true }); });
+    w.appendChild(b); return w;
+  };
+  popX.addEventListener('click', () => closePop(true));
+  document.addEventListener('click', (e) => { if (!pop.contains(e.target)) closePop(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePop(true); closeMenu(true); } });
+
+  const mark = (node, f, field) => { node.dataset.source = 'fichas'; node.dataset.where = 'fondo=' + f; node.dataset.field = field; const r = ficha(f); node.textContent = r ? r[field] : '—'; return node; };
+  const vmark = (node, f, field) => { node.dataset.source = 'valoracion'; node.dataset.where = 'fondo=' + f; node.dataset.field = field; const r = (dash.data('valoracion').data || []).find((x) => x.fondo === f); node.textContent = r ? r[field] : '—'; return node; };
+  const fcard = (f, cls) => { const c = fs(el('div', 're-card fc' + (cls ? ' ' + cls : '')), f); const t = el('div', 're-ftag'); t.append(el('i'), document.createTextNode(f)); c.appendChild(t); return c; };
+
+  // Controles
+  const press = (g, b) => g.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  R.querySelectorAll('.re-sel button').forEach((b) => b.addEventListener('click', () => {
+    st.sel = b.dataset.sel; R.dataset.sel = st.sel; st.cat = null; st.asel = null; st.ciu = '';
+    if (st.sel !== 'AMBOS') { st.pf = st.sel; if (st.sFondo !== st.sel) { st.sFondo = st.sel; setSimDefault(); } }
+    draw();
+  }));
+  R.querySelectorAll('.adv-in').forEach((i) => i.addEventListener('change', () => { st.mode = i.checked ? 'analista' : 'cliente'; R.dataset.mode = st.mode; draw(); }));
+  R.querySelectorAll('.re-pf [data-pf]').forEach((b) => b.addEventListener('click', () => { st.pf = b.dataset.pf; st.cat = null; st.asel = null; st.ciu = ''; draw(); }));
+  const segBind = (id, key, after) => { const g = document.getElementById(id); g.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { st[key] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; if (after) after(); draw(); })); };
+  segBind('h-view', 'hView'); segBind('h-per', 'hPer'); segBind('s-fondo', 'sFondo', () => setSimDefault());
+  function syncControls() {
+    R.querySelectorAll('.re-sel button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.sel === st.sel)));
+    R.querySelectorAll('.adv-in').forEach((x) => { x.checked = st.mode === 'analista'; });
+    R.querySelectorAll('.re-pf [data-pf]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.pf === st.pf)));
+    [['h-view', st.hView], ['h-per', st.hPer], ['s-fondo', st.sFondo]].forEach(([id, v]) => document.getElementById(id).querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))));
+  }
+
+  // Menú de secciones
+  const menu = document.getElementById('re-menu'), menuBtn = document.getElementById('re-menu-btn');
+  function closeMenu(focus) { if (menu.hidden) return; menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); if (focus) menuBtn.focus(); }
+  menuBtn.addEventListener('click', (e) => { e.stopPropagation(); const open = menu.hidden; menu.hidden = !open; menuBtn.setAttribute('aria-expanded', String(open)); if (open) { const f = menu.querySelector('button.go'); if (f) f.focus({ preventScroll: true }); } });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target) && !menuBtn.contains(e.target)) closeMenu(); });
+  R.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { const t = document.getElementById(b.dataset.go); closeMenu(); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); dash.setLink(b.dataset.go); } }));
+  const goBtns = [...R.querySelectorAll('#re-nav [data-go], #re-menu [data-go]')];
+  const io = new IntersectionObserver((ents) => {
+    for (const e of ents) if (e.isIntersecting) {
+      goBtns.forEach((b) => b.setAttribute('aria-current', String(b.dataset.go === e.target.id)));
+      const a = document.querySelector('#re-nav [aria-current="true"]'); if (a && a.offsetParent) { const nav = a.parentNode; const l = a.offsetLeft - nav.clientWidth / 2 + a.offsetWidth / 2; nav.scrollTo({ left: l, behavior: 'smooth' }); }
+    }
+  }, { root: null, rootMargin: '-40% 0px -55% 0px' });
+  R.querySelectorAll('.re-sec, .re-top').forEach((s) => io.observe(s));
+  new IntersectionObserver(([e]) => R.classList.toggle('tick-on', !e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 }).observe(document.getElementById('hero'));
+
+  // Gráfica de líneas con rótulos al final de cada serie, puntero, toque y teclado
+  function lineChart(box, { series, steps = [], events = [], refs = [], yFmt, tipFmt, labFmt, yDomain, xDomain, H = 260, zero = false }) {
+    box.replaceChildren();
+    const W = Math.max(280, box.clientWidth || 600);
+    const pts = series.flatMap((s) => s.pts).concat(steps.flatMap((s) => s.pts));
+    if (!pts.length) return;
+    const xd = xDomain || d3.extent(pts, (p) => p.x);
+    let yd = yDomain || d3.extent(pts, (p) => p.y);
+    if (!yDomain && refs.length) yd = [Math.min(yd[0], ...refs.map((r) => r.y)), Math.max(yd[1], ...refs.map((r) => r.y))];
+    const top = events.length ? 32 : 14;
+    const y = d3.scaleLinear(yd, [H - 28, top]).nice(5);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('aria-hidden', 'true');
+    const yt = y.ticks(5);
+    const meas = svg.append('text');
+    const tw = (t, cls) => { meas.attr('class', cls || null).text(t); return meas.node().getComputedTextLength(); };
+    const mL = Math.ceil(d3.max(yt, (t) => tw(yFmt(t)))) + 12;
+    const lf = labFmt || tipFmt || yFmt; const short = W < 420 && series.filter((s) => s.pts.length && s.end !== false).length > 1;
+    const ends = series.filter((s) => s.pts.length && s.end !== false).map((s) => { const lp = s.pts[s.pts.length - 1]; return { s, lp, txt: (s.lab || s.name) + (short && s.lab ? '' : ' ' + lf(lp.y)) }; });
+    const mR = ends.length ? Math.ceil(d3.max(ends, (e) => tw(e.txt, 'lbl'))) + 16 : 14;
+    meas.remove();
+    const x = d3.scaleUtc(xd, [mL, W - mR]);
+    const g = svg.append('g');
+    g.selectAll(null).data(yt).join('line').attr('x1', mL).attr('x2', W - mR).attr('y1', y).attr('y2', y).attr('stroke', '#E3E8DE');
+    g.selectAll(null).data(yt).join('text').attr('x', mL - 8).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text(yFmt);
+    if (zero && y.domain()[0] < 0) g.append('line').attr('x1', mL).attr('x2', W - mR).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#9AA3AB').attr('stroke-dasharray', '3,3');
+    const span = xd[1] - xd[0];
+    const xt = span > 700 * 864e5 ? x.ticks(d3.utcYear.every(Math.max(1, Math.ceil((span / (365 * 864e5)) / Math.max(2, Math.floor((W - mL - mR) / 80)))))) : x.ticks(Math.max(2, Math.floor((W - mL - mR) / 100)));
+    g.selectAll(null).data(xt).join('text').attr('x', x).attr('y', H - 6).attr('text-anchor', 'middle').text((d) => span > 700 * 864e5 ? String(d.getUTCFullYear()) : MES[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2));
+    for (const r of refs) {
+      g.append('line').attr('x1', mL).attr('x2', W - mR).attr('y1', y(r.y)).attr('y2', y(r.y)).attr('stroke', INK).attr('stroke-width', 1.5).attr('stroke-dasharray', '5,4');
+      g.append('text').attr('class', 'ref').attr('x', W - mR - 4).attr('text-anchor', 'end').attr('y', y(r.y) - 6).text(r.label);
+    }
+    let lastEx = -99, lvl = 0;
+    for (const ev of events.slice().sort((a, b) => a.x - b.x)) {
+      const ex = x(ev.x); if (ex < mL || ex > W - mR) continue;
+      lvl = ex - lastEx < 20 ? lvl + 1 : 0; lastEx = ex;
+      const off = lvl ? (lvl % 2 ? 10 : -10) : 0;
+      g.append('line').attr('x1', ex).attr('x2', ex).attr('y1', 22).attr('y2', H - 28).attr('stroke', EVC).attr('stroke-dasharray', '2,3').attr('opacity', .7);
+      const eg = g.append('g').attr('transform', `translate(${ex + off},11)`);
+      eg.append('circle').attr('r', 9).attr('fill', EVC);
+      eg.append('text').attr('class', 'evn').attr('text-anchor', 'middle').attr('dy', '0.35em').text(ev.n);
+    }
+    for (const s of steps) {
+      const sp = s.pts.filter((p) => p.x >= xd[0] && p.x <= xd[1]);
+      const pre = s.pts.filter((p) => p.x < xd[0]).pop();
+      const seq = pre ? [{ x: xd[0], y: pre.y }, ...sp] : sp.slice();
+      if (seq.length) seq.push({ x: xd[1], y: seq[seq.length - 1].y });
+      g.append('path').attr('d', d3.line().x((p) => x(p.x)).y((p) => y(p.y)).curve(d3.curveStepAfter)(seq)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', 1.8).attr('stroke-dasharray', '6,4');
+      g.selectAll(null).data(sp).join('circle').attr('cx', (p) => x(p.x)).attr('cy', (p) => y(p.y)).attr('r', 4).attr('fill', (p) => p.calc ? '#FFFFFF' : s.color).attr('stroke', s.color).attr('stroke-width', 2);
+    }
+    for (const s of series) {
+      if (!s.pts.length) continue;
+      g.append('path').attr('d', d3.line().x((p) => x(p.x)).y((p) => y(p.y))(s.pts)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', s.w || 2.5).attr('stroke-dasharray', s.dash || null).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+      const lp = s.pts[s.pts.length - 1];
+      g.append('circle').attr('cx', x(lp.x)).attr('cy', y(lp.y)).attr('r', 4.5).attr('fill', s.color);
+    }
+    const lab = ends.map((e) => ({ ...e, yy: y(e.lp.y) })).sort((a, b) => a.yy - b.yy);
+    for (let i = 1; i < lab.length; i++) if (lab[i].yy - lab[i - 1].yy < 16) lab[i].yy = lab[i - 1].yy + 16;
+    for (const l of lab) g.append('text').attr('class', 'lbl').attr('x', x(l.lp.x) + 9).attr('y', Math.min(H - 32, Math.max(top, l.yy))).attr('dy', '0.32em').style('fill', l.s.tcolor || l.s.color).text(l.txt);
+    const tip = el('div', 're-tip'); tip.hidden = true; box.appendChild(tip);
+    const rule = g.append('line').attr('y1', top).attr('y2', H - 28).attr('stroke', '#9AA3AB').attr('visibility', 'hidden');
+    const dots = series.map((s) => g.append('circle').attr('r', 5.5).attr('fill', s.color).attr('stroke', '#FFFFFF').attr('stroke-width', 2).attr('visibility', 'hidden'));
+    const bis = d3.bisector((p) => p.x).center;
+    const hide = () => { tip.hidden = true; rule.attr('visibility', 'hidden'); dots.forEach((d) => d.attr('visibility', 'hidden')); };
+    const showAt = (dx) => {
+      const rows = [];
+      series.forEach((s, i) => { if (!s.pts.length) return; const p = s.pts[bis(s.pts, dx)]; if (Math.abs(p.x - dx) > 20 * 864e5 && s.pts.length > 3) { dots[i].attr('visibility', 'hidden'); return; } dots[i].attr('cx', x(p.x)).attr('cy', y(p.y)).attr('visibility', 'visible'); rows.push({ s, p }); });
+      if (!rows.length) return hide();
+      rule.attr('x1', x(rows[0].p.x)).attr('x2', x(rows[0].p.x)).attr('visibility', 'visible');
+      tip.replaceChildren(el('div', 'd', tipD(rows[0].p.x)));
+      for (const { s, p } of rows) { const r = el('div'); const sw = el('span', 're-sw'); sw.style.background = s.color; r.append(sw, document.createTextNode(s.name + ': ' + (tipFmt || yFmt)(p.y))); tip.appendChild(r); }
+      for (const s2 of steps) { const p = s2.pts.filter((qq) => qq.x <= rows[0].p.x).pop(); if (p) tip.appendChild(el('div', null, s2.name + ': ' + (tipFmt || yFmt)(p.y))); }
+      tip.hidden = false;
+      const px = x(rows[0].p.x) / W * box.clientWidth; let left = px + 14; if (left + tip.offsetWidth > box.clientWidth) left = px - tip.offsetWidth - 14;
+      tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '4px';
+    };
+    svg.append('rect').attr('x', mL).attr('y', 0).attr('width', Math.max(0, W - mR - mL)).attr('height', H - 28).attr('fill', 'transparent')
+      .on('pointermove', (ev) => showAt(x.invert(d3.pointer(ev)[0]))).on('pointerdown', (ev) => showAt(x.invert(d3.pointer(ev)[0]))).on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') hide(); });
+    const base = (series.find((s) => s.pts.length) || { pts: [] }).pts; let ki = -1;
+    box.tabIndex = 0; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Gráfica interactiva. Usa las flechas izquierda y derecha para recorrer los datos.');
+    box.onkeydown = (e) => { if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && base.length) { e.preventDefault(); const stp = Math.max(1, Math.round(base.length / 40)); ki = ki < 0 ? base.length - 1 : Math.max(0, Math.min(base.length - 1, ki + (e.key === 'ArrowRight' ? stp : -stp))); showAt(base[ki].x); } };
+    box.onblur = () => { hide(); ki = -1; };
+  }
+
+  // Barras verticales: etiquetas sin choques, barra rayada para datos especiales, puntero, toque y teclado
+  function barChart(box, { data, color, yFmt, tipFmt, H = 210, all = false }) {
+    box.replaceChildren();
+    if (!data.length) return;
+    const W = Math.max(260, box.clientWidth || 500);
+    const y = d3.scaleLinear([0, d3.max(data, (d) => d.v) * 1.2], [H - 28, 16]).nice(4);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('aria-hidden', 'true');
+    const yt = y.ticks(4);
+    const tmp = svg.append('text');
+    const mL = Math.ceil(d3.max(yt, (t) => { tmp.text(yFmt(t)); return tmp.node().getComputedTextLength(); })) + 10;
+    tmp.remove();
+    const x = d3.scaleBand(data.map((d) => d.k), [mL, W - 6]).padding(0.25);
+    const col = (d) => d.c || (typeof color === 'function' ? color(d) : color);
+    const defs = svg.append('defs');
+    const hid = (c) => { const id = 're-h' + (++uid); const p = defs.append('pattern').attr('id', id).attr('width', 6).attr('height', 6).attr('patternUnits', 'userSpaceOnUse').attr('patternTransform', 'rotate(45)'); p.append('rect').attr('width', 6).attr('height', 6).attr('fill', '#FFFFFF'); p.append('rect').attr('width', 3).attr('height', 6).attr('fill', c); return 'url(#' + id + ')'; };
+    svg.selectAll(null).data(yt).join('line').attr('x1', mL).attr('x2', W - 6).attr('y1', y).attr('y2', y).attr('stroke', '#E3E8DE');
+    svg.selectAll(null).data(yt).join('text').attr('x', mL - 6).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text(yFmt);
+    const tip = el('div', 're-tip'); tip.hidden = true; box.appendChild(tip);
+    const bars = svg.selectAll(null).data(data).join('rect').attr('x', (d) => x(d.k)).attr('width', x.bandwidth()).attr('y', (d) => y(d.v)).attr('height', (d) => y(0) - y(d.v)).attr('rx', 4)
+      .attr('fill', (d) => d.hatch ? hid(col(d)) : col(d)).attr('stroke', (d) => d.hatch ? col(d) : null).attr('stroke-width', 1.5);
+    const show = (d) => { bars.attr('opacity', (b) => b === d ? 1 : .55); tip.replaceChildren(el('div', 'd', d.k), el('div', null, (tipFmt || yFmt)(d.v))); if (d.note) tip.appendChild(el('div', 'd', d.note)); tip.hidden = false; const px = (x(d.k) + x.bandwidth() / 2) / W * box.clientWidth; let left = px + 10; if (left + tip.offsetWidth > box.clientWidth) left = px - tip.offsetWidth - 10; tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '4px'; };
+    const hide = () => { bars.attr('opacity', 1); tip.hidden = true; };
+    bars.on('pointerenter', (ev, d) => show(d)).on('pointerdown', (ev, d) => show(d)).on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') hide(); });
+    const every = Math.ceil(data.length / Math.max(1, Math.floor((W - mL) / 52)));
+    const idx = data.map((d, i) => i).filter((i) => i % every === 0); const last = data.length - 1;
+    if (idx[idx.length - 1] !== last) { if (last - idx[idx.length - 1] < every) idx.pop(); idx.push(last); }
+    svg.selectAll(null).data(idx.map((i) => data[i])).join('text').attr('x', (d) => x(d.k) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').text((d) => d.k);
+    const showAll = all && x.bandwidth() >= 30;
+    svg.selectAll(null).data(showAll ? data : [data[last]]).join('text').attr('x', (d) => x(d.k) + x.bandwidth() / 2).attr('y', (d) => y(d.v) - 6).attr('text-anchor', 'middle').style('fill', INK).style('font-size', showAll ? '11px' : '12px').style('font-weight', 700).text((d) => yFmt(d.v));
+    let ki = -1; box.tabIndex = 0; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Gráfica de barras. Usa las flechas izquierda y derecha para recorrer los datos.');
+    box.onkeydown = (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); ki = ki < 0 ? last : Math.max(0, Math.min(last, ki + (e.key === 'ArrowRight' ? 1 : -1))); show(data[ki]); } };
+    box.onblur = () => { hide(); ki = -1; };
+  }
+
+  // Barras horizontales con límite rotulado y tramo sobre el límite rayado
+  function hbars(box, rows, color, max, limit) {
+    box.replaceChildren(); box.classList.add('rx-hb');
+    const m = max || d3.max(rows, (r) => r.v) || 1;
+    if (limit != null) { const h = el('div', 'r hdr'); const t = el('span', 't'); const lb = el('span', 'lim-lab', 'Límite ' + limit + '%'); lb.style.left = (limit / m * 100) + '%'; t.appendChild(lb); h.append(el('span'), t, el('span')); box.appendChild(h); }
+    for (const r of rows) {
+      const row = el('div', 'r'); const n = el('span', 'n', r.k); n.title = r.k + (r.note ? '. ' + r.note : '');
+      const t = el('span', 't'); const c = r.c || color;
+      if (r.nd) { const f = el('span', 'f nd'); f.style.width = Math.min(100, r.v / m * 100) + '%'; t.appendChild(f); }
+      else if (limit != null && r.v > limit) {
+        const f = el('span', 'f'); f.style.width = (limit / m * 100) + '%'; f.style.background = c; f.style.borderRadius = '6px 0 0 6px';
+        const o = el('span', 'f over'); o.style.left = (limit / m * 100) + '%'; o.style.width = Math.min(100 - limit / m * 100, (r.v - limit) / m * 100) + '%'; t.append(f, o);
+      } else { const f = el('span', 'f'); f.style.width = Math.min(100, r.v / m * 100) + '%'; f.style.background = c; t.appendChild(f); }
+      if (limit != null) { const l = el('span', 'lim'); l.style.left = 'calc(' + (limit / m * 100) + '% - 1px)'; t.appendChild(l); }
+      row.append(n, t, el('span', 'p', r.label)); box.appendChild(row);
+    }
+  }
+
+  // RESUMEN
+  // PORTADA: precio de cierre, cambio frente al cierre anterior y últimas 30 sesiones
+  const SPARK_N = 30;
+  const sessions = (f, n) => dash.data('precios').data.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1).slice(-n);
+  const arrow = (dir) => {
+    const ns = 'http://www.w3.org/2000/svg'; const s = document.createElementNS(ns, 'svg'); s.setAttribute('width', '12'); s.setAttribute('height', '12'); s.setAttribute('viewBox', '0 0 12 12'); s.setAttribute('aria-hidden', 'true');
+    const p = document.createElementNS(ns, 'path'); p.setAttribute('fill', 'currentColor');
+    p.setAttribute('d', dir === 'sube' ? 'M6 1.5 11 9.5H1z' : dir === 'baja' ? 'M6 10.5 1 2.5h10z' : 'M1 5h10v2H1z'); s.appendChild(p); return s;
+  };
+  // Línea mínima para la franja de cotización
+  function miniSpark(f, w = 72, h = 22) {
+    const P = sessions(f, SPARK_N); const ns = 'http://www.w3.org/2000/svg';
+    const s = document.createElementNS(ns, 'svg'); s.setAttribute('width', w); s.setAttribute('height', h); s.setAttribute('aria-hidden', 'true');
+    if (P.length < 2) return s;
+    const x = d3.scaleLinear([0, P.length - 1], [1, w - 3]); const y = d3.scaleLinear(d3.extent(P, (d) => d.cierre), [h - 3, 3]);
+    const pl = document.createElementNS(ns, 'polyline'); pl.setAttribute('points', P.map((d, i) => x(i).toFixed(1) + ',' + y(d.cierre).toFixed(1)).join(' '));
+    pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', COL[f]); pl.setAttribute('stroke-width', '1.5'); pl.setAttribute('stroke-linejoin', 'round'); s.appendChild(pl);
+    const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x(P.length - 1)); c.setAttribute('cy', y(P[P.length - 1].cierre)); c.setAttribute('r', '2.5'); c.setAttribute('fill', COL[f]); s.appendChild(c);
+    return s;
+  }
+  // Línea de 30 sesiones con puntero, toque y flechas del teclado
+  function bigSpark(f) {
+    const P = sessions(f, SPARK_N);
+    const wrap = el('div'); const box = el('div', 're-sp'); const cap = el('p', 're-spcap'); cap.setAttribute('aria-live', 'polite');
+    wrap.append(box, cap);
+    if (P.length < 2) return wrap;
+    const W = 1000, H = 64; const ns = 'http://www.w3.org/2000/svg';
+    const ext = d3.extent(P, (d) => d.cierre); const pad = (ext[1] - ext[0]) * .08 || ext[0] * .01;
+    const x = d3.scaleLinear([0, P.length - 1], [0, W]); const y = d3.scaleLinear([ext[0] - pad, ext[1] + pad], [H, 0]);
+    const s = document.createElementNS(ns, 'svg'); s.setAttribute('viewBox', '0 0 ' + W + ' ' + H); s.setAttribute('preserveAspectRatio', 'none'); s.setAttribute('aria-hidden', 'true');
+    const ar = document.createElementNS(ns, 'path'); ar.setAttribute('d', 'M0,' + H + ' ' + P.map((d, i) => 'L' + x(i).toFixed(1) + ',' + y(d.cierre).toFixed(1)).join(' ') + ' L' + W + ',' + H + 'Z'); ar.setAttribute('fill', TINT[f]);
+    const ln = document.createElementNS(ns, 'path'); ln.setAttribute('d', P.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(d.cierre).toFixed(1)).join(' ')); ln.setAttribute('fill', 'none'); ln.setAttribute('stroke', COL[f]); ln.setAttribute('stroke-width', '2'); ln.setAttribute('vector-effect', 'non-scaling-stroke'); ln.setAttribute('stroke-linejoin', 'round');
+    s.append(ar, ln); box.appendChild(s);
+    const pos = (i) => [x(i) / W * 100, y(P[i].cierre) / H * 100];
+    const last = el('span', 'dot'); const [lx, ly] = pos(P.length - 1); last.style.left = lx + '%'; last.style.top = ly + '%'; box.appendChild(last);
+    const hv = el('span', 'dot h'); const vl = el('span', 'vl'); hv.hidden = true; vl.hidden = true; box.append(vl, hv);
+    const lo = d3.min(P, (d) => d.cierre), hi = d3.max(P, (d) => d.cierre);
+    const rest = () => { hv.hidden = true; vl.hidden = true; cap.replaceChildren('Últimas ' + P.length + ' sesiones. Pasa el cursor o toca la línea para ver cada día.'); };
+    let ki = P.length - 1;
+    const show = (i) => {
+      ki = i; const [px, py] = pos(i); hv.style.left = px + '%'; hv.style.top = py + '%'; vl.style.left = px + '%'; hv.hidden = false; vl.hidden = false;
+      const d = P[i], pv = P[i - 1]; const parts = [fmtD(parse(d.fecha)) + ': ', el('b', null, 'COP ' + es(d.cierre))];
+      if (pv) { const ch = d.cierre / pv.cierre - 1; parts.push(', ' + (ch === 0 ? 'sin cambio' : sgn(ch * 100, 2) + '%') + ' frente al día anterior.'); } else parts.push('.');
+      cap.replaceChildren(...parts);
+    };
+    const at = (e) => { const r = box.getBoundingClientRect(); const i = Math.round((e.clientX - r.left) / r.width * (P.length - 1)); return Math.max(0, Math.min(P.length - 1, i)); };
+    box.addEventListener('pointermove', (e) => show(at(e)));
+    box.addEventListener('pointerdown', (e) => show(at(e)));
+    box.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') rest(); });
+    box.tabIndex = 0; box.setAttribute('role', 'img'); box.setAttribute('aria-label', 'Precio de cierre de ' + f + ' en las últimas ' + P.length + ' sesiones. Usa las flechas para recorrer los días.');
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); show(Math.max(0, Math.min(P.length - 1, (hv.hidden ? P.length - 1 : ki) + (e.key === 'ArrowRight' ? 1 : -1)))); }
+      if (e.key === 'Escape') rest();
+    });
+    box.addEventListener('blur', rest);
+    rest(); return wrap;
+  }
+  // Rango de 52 semanas con la posición del precio de hoy
+  function range52(f) {
+    const A = dash.data('precios').data.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+    const box = el('div', 're-rg'); if (A.length < 2) return box;
+    const last = A[A.length - 1]; const c0 = new Date(parse(last.fecha).getTime() - 364 * 864e5).toISOString().slice(0, 10);
+    const P = A.filter((r) => r.fecha >= c0); const full = A[0].fecha <= c0;
+    let lo = P[0], hi = P[0]; for (const r of P) { if (r.cierre < lo.cierre) lo = r; if (r.cierre > hi.cierre) hi = r; }
+    const pos = hi.cierre > lo.cierre ? (last.cierre - lo.cierre) / (hi.cierre - lo.cierre) : .5;
+    const pc = Math.round(pos * 100);
+    const titulo = full ? 'Rango de 52 semanas' : 'Rango desde el ' + fmtD(parse(P[0].fecha));
+    const h = el('div', 'h'); const r = el('span'); r.append('Hoy está en el ', el('b', null, pc + '%'), ' del rango'); h.append(el('span', 'k', titulo), r);
+    const bar = el('div', 'bar'); const pt = el('span', 'pt'); pt.style.left = (pos * 100) + '%'; const fl = el('span', 'fl'); fl.style.width = (pos * 100) + '%'; bar.append(fl, pt);
+    bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', titulo + ': mínimo COP ' + es(lo.cierre) + ' el ' + fmtD(parse(lo.fecha)) + ', máximo COP ' + es(hi.cierre) + ' el ' + fmtD(parse(hi.fecha)) + '. El precio de hoy, COP ' + es(last.cierre) + ', está en el ' + pc + '% del rango.');
+    const end = (lab, row, cls) => { const e = el('span', cls); e.append(lab + ' ', el('b', null, 'COP ' + es(row.cierre)), el('small', null, fmtD(parse(row.fecha)))); return e; };
+    const ends = el('div', 'ends'); ends.append(end('Mínimo', lo, 'lo'), end('Máximo', hi, 'hi'));
+    box.append(h, bar, ends); return box;
+  }
+  function hero(f) {
+    const r = ficha(f);
+    const box = fs(el('div', 're-hc'), f);
+    const hd = el('div', 'hd'); const im = el('img'); im.src = LOGO[f]; im.alt = 'Logo de ' + f; hd.append(im, el('span', null, NAME[f]));
+    const px = el('div', 're-px'); px.append(el('small', null, 'COP'), mark(el('b'), f, 'precio_n'));
+    const dir = r ? r.var_dia_dir : 'nd';
+    const chg = el('p', 're-chg ' + dir); const v = el('span', 'v'); if (dir !== 'nd') v.appendChild(arrow(dir)); v.appendChild(mark(el('span'), f, 'var_dia'));
+    const tx = el('span'); tx.append(mark(el('span'), f, 'var_dia_cop'), ' frente al cierre del ', mark(el('span'), f, 'fecha_ant'), '. Cierre del ', mark(el('b'), f, 'fecha'), '.');
+    chg.append(v, tx);
+    const pr = r ? num(r.precio_pct_nav) || 0 : 0;
+    const shr = el('div', 're-shr'); const t = el('div', 't');
+    const tl = el('span'); tl.append('Precio ', mark(el('b'), f, 'precio')); const tr = el('span'); tr.append('Valor patrimonial ', mark(el('b'), f, 'nav'));
+    t.append(tl, tr); const trk = el('div', 'trk'); const fil = el('div', 'fil' + (st.anim ? '' : ' go')); fil.style.width = Math.max(2, Math.min(100, pr)) + '%'; trk.appendChild(fil); shr.append(t, trk);
+    const say = el('p', 're-say');
+    say.append('Por cada COP 1.000 de valor patrimonial (', mark(el('span'), f, 'nav_corte'), ') el precio en bolsa equivale a ', mark(el('b', 'num'), f, 'por_mil'), ', un descuento de ', mark(el('b', 'num'), f, 'descuento'), '.');
+    const kv = el('dl', 're-kv');
+    const it = (lab, gk, field, parts) => { const d = el('div'); const dt = el('dt', null, lab); if (gk) dt.appendChild(q(gk)); const dd = mark(el('dd'), f, field); const n = el('span', 'd'); n.append(...parts); d.append(dt, dd, n); return d; };
+    kv.append(
+      it('Descuento', 'desc', 'descuento', ['Más alto que en ', mark(el('span'), f, 'percentil_n'), ' de cada 100 días ' + (f === 'PEI' ? 'desde 2023' : 'desde enero de 2026')]),
+      it('Pagos de 12 meses', 'dy', 'dy', [mark(el('span'), f, 'dist_millon'), ' por cada COP 1 millón al precio de cierre']),
+      it('Endeudamiento', 'ltv', 'ltv', ['Límite del reglamento: 35%. Corte ', mark(el('span'), f, 'ltv_t')]),
+    );
+    box.append(hd, px, chg, ok('precios') ? bigSpark(f) : el('div', 're-sp'), ok('precios') ? range52(f) : el('div'));
+    const det = fs(el('div', 're-hd2'), f); const tg = el('div', 're-ftag'); tg.append(el('i'), document.createTextNode(f + ' frente a su valor patrimonial'));
+    det.append(tg, shr, say, kv);
+    return [box, det];
+  }
+  function drawTick() {
+    const T = document.querySelector('#re-tick .re-wrap'); if (!T || !ok('fichas', 'precios')) return;
+    const items = ['PEI', 'TIN'].map((f) => {
+      const r = ficha(f); const s = fs(el('span', 're-tq'), f);
+      const c = el('span', 'c ' + r.var_dia_dir); c.appendChild(mark(el('span'), f, 'var_dia'));
+      const dsc = el('span', 'dsc'); dsc.append('descuento ', mark(el('b'), f, 'descuento'));
+      s.append(el('span', 'f', f), mark(el('span', 'p'), f, 'precio_n'), c, miniSpark(f), dsc); return s;
+    });
+    const dt = el('span', 'dt'); dt.append('Cierre del ', el('span', null, latestFecha()));
+    T.replaceChildren(...items, dt);
+  }
+  const latestFecha = () => { const a = ficha('PEI'), b = ficha('TIN'); return (a.fecha_iso >= b.fecha_iso ? a : b).fecha; };
+  const DUEL = [
+    { k: 'vac_f', n: 'Vacancia física', g: 'vac', ex: 'Área sin arrendar sobre área total. Más alto: más área vacía.' },
+    { k: 'cap', n: 'Valor en bolsa', g: 'cap', ex: 'Tamaño del fondo a precio de mercado.' },
+    { k: 'vol', n: 'Volumen diario promedio', g: 'vol', ex: 'Monto negociado por día en las últimas 21 sesiones.' },
+    { k: 'inversionistas', n: 'Inversionistas', g: 'inv', ex: 'Número de inversionistas según el último informe de cada fondo.' },
+  ];
+  function drawResumen() {
+    const H = document.getElementById('hero');
+    if (failed('fichas')) fail(H); else if (ok('fichas')) { const hs = ['PEI', 'TIN'].map(hero); H.replaceChildren(hs[0][0], hs[1][0], hs[0][1], hs[1][1]); if (ok('precios')) st.anim = true; }
+    const box = document.getElementById('duel');
+    if (st.sel === 'AMBOS' && ok('fichas')) {
+      box.replaceChildren(...DUEL.map((m) => {
+        const c = el('div', 're-dm'); const h = el('div', 'h', m.n); h.appendChild(q(m.g)); c.appendChild(h);
+        const vals = ['PEI', 'TIN'].map((f) => Math.abs(num(ficha(f)[m.k]) || 0)); const mx = Math.max(...vals) || 1;
+        ['PEI', 'TIN'].forEach((f, i) => { const row = fs(el('div', 'row'), f); const t = el('span', 't'); const s = el('span'); s.style.width = (vals[i] / mx * 100) + '%'; t.appendChild(s); row.append(el('span', 'f', f), mark(el('span', 'v'), f, m.k), t); c.appendChild(row); });
+        c.appendChild(el('div', 'ex', m.ex)); return c;
+      }));
+    }
+    const facts = document.getElementById('facts');
+    if (st.sel !== 'AMBOS' && ok('fichas')) {
+      const f = st.sel; const r = ficha(f); const latest = Math.max(qnum(r.ltv_t) || 0, qnum(r.activos_t) || 0, qnum(r.vac_f_t) || 0);
+      const fc = (lab, gk, field, tField) => {
+        const card = el('div', 're-kpi re-fact'); const k = el('span', 'k', lab); if (gk) k.appendChild(q(gk)); const v = mark(el('span', 'v'), f, field); const d = el('span', 'd');
+        if (tField) { const old = latest && qnum(r[tField]) && latest - qnum(r[tField]) >= 4; if (old) d.classList.add('old'); d.append(old ? 'Último dato publicado: ' : 'Corte ', mark(el('span'), f, tField)); }
+        card.append(k, v, d); return card;
+      };
+      facts.replaceChildren(fc('Activos bajo administración', null, 'activos', 'activos_t'), fc('Área arrendable', null, 'gla', 'gla_t'), fc('Número de activos', null, 'num_activos', 'num_activos_t'), fc('Valor en bolsa', 'cap', 'cap'), fc('Volumen diario promedio', 'vol', 'vol'), fc('Plazo promedio de contratos', 'walt', 'walt', 'walt_t'));
+    }
+    document.getElementById('prof-title').textContent = st.sel === 'AMBOS' ? 'Qué son PEI y TIN' : 'Qué es ' + st.sel;
+    const PF = document.getElementById('perfiles');
+    if (failed('composicion')) fail(PF);
+    else if (ok('composicion')) PF.replaceChildren(...funds().map((f) => {
+      const r = dash.data('composicion').data.find((x) => x.fondo === f && x.dimension === 'perfil');
+      const c = fs(el('div', 're-prof' + (st.prof[f] ? ' open' : '')), f);
+      const hd = el('div', 'hd'); const im = el('img'); im.src = LOGO[f]; im.alt = 'Logo de ' + f; hd.append(im, el('span', null, NAME[f]));
+      const p = el('p', null, r ? r.nota : ''); const ft = el('div', 'ft');
+      const mb = el('button', 're-more-btn', st.prof[f] ? 'Leer menos' : 'Leer más'); mb.type = 'button'; mb.setAttribute('aria-expanded', String(!!st.prof[f]));
+      mb.addEventListener('click', () => { st.prof[f] = !st.prof[f]; c.classList.toggle('open', st.prof[f]); mb.textContent = st.prof[f] ? 'Leer menos' : 'Leer más'; mb.setAttribute('aria-expanded', String(st.prof[f])); });
+      ft.appendChild(mb);
+      if (r) { const a = el('a', null, 'Fuente'); a.href = r.fuente_url; a.target = '_blank'; a.rel = 'noopener'; ft.appendChild(a); }
+      c.append(hd, p, ft); return c;
+    }));
+  }
+
+  // PAGOS
+  const DIST_ESPECIAL = { PEI: { t: '4T2025', nota: 'Incluye una restitución parcial de capital' } };
+  function drawPagos() {
+    document.getElementById('pg-title').textContent = st.sel === 'AMBOS' ? 'Cuánto reparten PEI y TIN' : 'Cuánto reparte ' + st.sel;
+    document.getElementById('q-dist').replaceChildren(q('dist'));
+    const B = ['pg-dist', 'pg-inv', 'pg-noi'].map((id) => document.getElementById(id));
+    if (failed('indicadores')) { B.forEach(fail); return; }
+    if (!ok('indicadores')) return;
+    const today = new Date().toISOString().slice(0, 10);
+    B[0].replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const I = ind(f); const D = I.filter((r) => r.distribucion_por_titulo_cop != null && r.fecha_corte <= today);
+      if (D.length) {
+        const l = D[D.length - 1], p = D.find((r) => tqn(r.trimestre).slice(0, 2) === tqn(l.trimestre).slice(0, 2) && r.trimestre.slice(-4) === String(+l.trimestre.slice(-4) - 1));
+        const sx = el('p', 're-stat'); sx.append('Último trimestre: ', el('b', null, 'COP ' + es(l.distribucion_por_titulo_cop, f === 'TIN' ? 2 : 0)), ' por título' + (p ? ', ' + sgn((l.distribucion_por_titulo_cop / p.distribucion_por_titulo_cop - 1) * 100) + '% frente al mismo trimestre del año anterior.' : '.'));
+        c.appendChild(sx);
+      }
+      const ch = el('div', 're-chart sm'); c.appendChild(ch);
+      const sp = DIST_ESPECIAL[f];
+      c.appendChild(el('p', 're-note', f === 'PEI' ? 'Flujo de caja distribuible por título de cada trimestre. La barra rayada de 4T 2025 incluye una restitución parcial de capital.' : 'Suma de los pagos mensuales de cada trimestre según fecha de pago. Antes de 4T 2025 no hay dato por título comparable con la base actual.'));
+      requestAnimationFrame(() => barChart(ch, { data: D.map((r) => ({ k: tqs(r.trimestre), v: r.distribucion_por_titulo_cop, hatch: !!(sp && tqn(r.trimestre) === sp.t), note: sp && tqn(r.trimestre) === sp.t ? sp.nota : null })), color: COL[f], yFmt: (v) => es(v, 0), tipFmt: (v) => 'COP ' + es(v, f === 'TIN' ? 2 : 0) + ' por título', all: true }));
+      return c;
+    }));
+    B[1].replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const V = ind(f).filter((r) => r.inversionistas != null); const ch = el('div', 're-chart sm');
+      c.append(ch, el('p', 're-note', 'Número de inversionistas según cada informe trimestral.'));
+      requestAnimationFrame(() => barChart(ch, { data: V.map((r) => ({ k: tqs(r.trimestre), v: r.inversionistas })), color: COL[f], yFmt: (v) => es(v, 0), all: true }));
+      return c;
+    }));
+    if (st.mode === 'analista') B[2].replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const NO = ind(f).filter((r) => r.noi_trimestre_cop != null); const ch = el('div', 're-chart sm');
+      c.append(ch, el('p', 're-note', 'Ingreso operativo neto: arriendos menos los costos de operar los inmuebles, antes de deuda y comisiones.'));
+      requestAnimationFrame(() => barChart(ch, { data: NO.map((r) => ({ k: tqs(r.trimestre), v: r.noi_trimestre_cop / 1e9 })), color: COL[f], yFmt: (v) => es(v, 0), tipFmt: (v) => 'COP ' + es(v, 1) + ' mil millones' }));
+      return c;
+    }));
+    const tb = document.querySelector('#tabla tbody');
+    if (ok('trimestral') && st.mode === 'analista') {
+      const cols = ['fondo', 'trimestre', 'nav', 'titulos', 'activos', 'num_activos', 'gla', 'vac_f', 'vac_e', 'deuda', 'ltv', 'kd', 'noi', 'dist', 'dist_tit', 'inv', 'walt', 'fuente'];
+      const cmap = { nav: 'nav_por_titulo', titulos: 'titulos', ltv: 'ltv_pct' };
+      const rows = dash.data('trimestral').data.filter((r) => funds().includes(r.fondo)).slice().sort((a, b) => a.fondo === b.fondo ? (a.fecha_corte < b.fecha_corte ? 1 : -1) : (a.fondo < b.fondo ? -1 : 1));
+      tb.replaceChildren(...rows.map((r) => {
+        const tr = el('tr'); tr.dataset.key = encodeURIComponent(r.fondo) + ',' + encodeURIComponent(r.trimestre); if (r.notas) tr.title = r.notas;
+        for (const k of cols) { const td = el('td'); if (k === 'fuente') { const a = el('a', null, r.fuente); a.href = r.fuente_url; a.target = '_blank'; a.rel = 'noopener'; td.appendChild(a); } else td.textContent = r[k]; if (k === 'fondo') { td.style.color = TXT[r.fondo]; td.style.fontWeight = 700; } if (cmap[k] && r.calculados.split(',').includes(cmap[k]) && r[k]) td.style.fontStyle = 'italic'; tr.appendChild(td); }
+        return tr;
+      }));
+    }
+  }
+
+  // PORTAFOLIO
+  const CATCOL = {
+    PEI: { 'Comercial': '#074A97', 'Corporativo': '#3A6FB0', 'Logístico': '#7FA2CF', 'Especializado': '#BFD0E7' },
+    TIN: { 'Local comercial': '#067A7C', 'Bodega': '#3BAAAD', 'Oficina': '#84CACB', 'Mayorista': '#C1E4E5' },
+  };
+  const LIGHT = ['#7FA2CF', '#BFD0E7', '#3BAAAD', '#84CACB', '#C1E4E5'];
+  const catColor = (f, c) => CATCOL[f][c] || '#9AA3AB';
+  const COMPCAT = { 'Local en centro comercial': 'Local comercial', 'Local a la calle': 'Local comercial', 'Local en PH': 'Local comercial', 'Bodega': 'Bodega', 'Oficina': 'Oficina' };
+  const assetsOf = (f) => (dash.data('activos').data || []).filter((r) => r.fondo === f);
+  const FILTER_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 2h11l-4.3 5v4.5l-2.4 1V7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  function drawPick(f) {
+    const pk = document.getElementById('tree-pick'); const all = assetsOf(f); const tot = d3.sum(all, (x) => x.valor_cop);
+    const r = all.find((x) => x.id === st.asel);
+    if (!r) { pk.replaceChildren(el('span', null, 'Selecciona un recuadro del mapa para ver el nombre, tipo, ciudad y valor del inmueble.')); return; }
+    const nm = el('span', 'nm', r.nombre); nm.dataset.source = 'activos'; nm.dataset.where = 'id=' + encodeURIComponent(r.id); nm.dataset.field = 'nombre';
+    const it = (k, v) => { const s = el('span'); s.append(k + ': ', el('b', null, v)); return s; };
+    pk.replaceChildren(nm, it('Tipo', [r.categoria, r.subtipo].filter(Boolean).join(', ')), it('Ciudad', r.ciudad || 'sin ciudad en la fuente'), it(r.base_valor === 'Avalúo' ? 'Avalúo' : 'Valor en libros', 'COP ' + es(r.valor_cop / 1e9, 1) + ' mil millones'), it('Peso en el portafolio', es(r.valor_cop / tot * 100, 1) + '%'));
+  }
+  function drawTree(f) {
+    const box = document.getElementById('tree');
+    if (failed('activos')) return fail(box);
+    if (!ok('activos')) return;
+    const rows = assetsOf(f).filter((r) => !st.cat || r.categoria === st.cat);
+    box.replaceChildren();
+    const W = box.clientWidth || 700; if (W < 200) return;
+    const Hh = Math.max(320, Math.min(500, W * 0.52));
+    box.style.height = Hh + 'px';
+    const groups = d3.group(rows, (r) => r.categoria || 'Sin categoría');
+    const root = d3.hierarchy({ children: [...groups].map(([k, v]) => ({ name: k, children: v })) }).sum((d) => d.valor_cop || 0).sort((a, b) => b.value - a.value);
+    d3.treemap().size([W, Hh]).paddingInner(2).round(true)(root);
+    const tip = el('div', 're-tip'); tip.hidden = true;
+    const pick = (r) => { st.asel = r.id; box.querySelectorAll('.cell.sel').forEach((c) => c.classList.remove('sel')); const c = box.querySelector('[data-id="' + CSS.escape(r.id) + '"]'); if (c) c.classList.add('sel'); drawPick(f); if (st.mode === 'analista') drawActivos(f); };
+    for (const leaf of root.leaves()) {
+      const r = leaf.data; const w = leaf.x1 - leaf.x0, h = leaf.y1 - leaf.y0; const bg = catColor(f, r.categoria);
+      const c = el('div', 'cell' + (st.asel === r.id ? ' sel' : '') + (LIGHT.includes(bg) ? ' lt' : ''));
+      c.dataset.id = r.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', r.nombre + ', COP ' + es(r.valor_cop / 1e9, 0) + ' mil millones');
+      Object.assign(c.style, { left: leaf.x0 + 'px', top: leaf.y0 + 'px', width: w + 'px', height: h + 'px', background: bg });
+      if (w > 64 && h > 28) { c.appendChild(el('b', null, r.nombre)); if (h > 44) c.appendChild(el('span', null, es(r.valor_cop / 1e9, 0) + ' mil millones')); }
+      c.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; const bb = box.getBoundingClientRect(); tip.replaceChildren(el('div', null, r.nombre), el('div', 'd', [r.categoria, r.ciudad || 'Sin ciudad en la fuente'].join(', ')), el('div', null, 'COP ' + es(r.valor_cop / 1e9, 1) + ' mil millones, ' + es(r.valor_cop / root.value * 100, 1) + '% del total')); tip.hidden = false; let x = e.clientX - bb.left + 14; if (x + tip.offsetWidth > bb.width) x = e.clientX - bb.left - tip.offsetWidth - 14; tip.style.left = Math.max(0, x) + 'px'; tip.style.top = Math.max(0, e.clientY - bb.top - 64) + 'px'; });
+      c.addEventListener('pointerleave', () => { tip.hidden = true; });
+      c.addEventListener('click', () => pick(r));
+      c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(r); } });
+      box.appendChild(c);
+    }
+    box.appendChild(tip);
+    document.getElementById('tree-leg').replaceChildren(...[...groups.keys()].map((k) => { const s = el('span'); const sw = el('span', 're-sw'); sw.style.background = catColor(f, k); sw.style.boxShadow = 'inset 0 0 0 1px rgba(14,27,44,.2)'; s.append(sw, document.createTextNode(k)); return s; }));
+  }
+  function drawActivos(f) {
+    if (!ok('activos') || st.mode !== 'analista') return;
+    const all = assetsOf(f);
+    const fcat = document.getElementById('f-cat'); const cats = [...new Set(all.map((r) => r.categoria).filter(Boolean))].sort();
+    fcat.replaceChildren(new Option('Todos los tipos', ''), ...cats.map((c) => new Option(c, c))); fcat.value = st.cat || '';
+    const fciu = document.getElementById('f-ciu'); const ciu = [...new Set(all.map((r) => r.ciudad).filter(Boolean))].sort();
+    fciu.replaceChildren(new Option('Todas las ciudades', ''), ...ciu.map((c) => new Option(c, c)), new Option('Sin ciudad en la fuente', '__nd')); fciu.value = st.ciu;
+    const rows = all.filter((r) => (!st.cat || r.categoria === st.cat) && (!st.ciu || (st.ciu === '__nd' ? !r.ciudad : r.ciudad === st.ciu)) && (!st.q || [r.nombre, r.ciudad, r.direccion, r.origen].filter(Boolean).join(' ').toLowerCase().includes(st.q)))
+      .sort((a, b) => { const x = a[st.sort], y = b[st.sort]; if (x == null) return 1; if (y == null) return -1; return (x < y ? -1 : x > y ? 1 : 0) * st.dir; });
+    const mx = d3.max(all, (r) => r.valor_cop) || 1;
+    document.getElementById('f-count').textContent = rows.length + ' activos, COP ' + es(d3.sum(rows, (r) => r.valor_cop) / 1e9) + ' mil millones';
+    const tact = document.getElementById('tact');
+    tact.querySelectorAll('th').forEach((th) => { const b = th.querySelector('button'); th.setAttribute('aria-sort', b.dataset.sort === st.sort ? (st.dir > 0 ? 'ascending' : 'descending') : 'none'); });
+    tact.querySelector('tbody').replaceChildren(...rows.map((r) => {
+      const tr = el('tr'); tr.dataset.key = encodeURIComponent(r.id); tr.tabIndex = 0; if (st.asel === r.id) tr.className = 'sel';
+      const tdv = el('td'); const bar = el('span', 'rx-incell'); bar.style.width = Math.max(2, r.valor_cop / mx * 60) + 'px'; bar.style.background = COL[f]; tdv.append(bar, document.createTextNode(es(r.valor_cop / 1e6)));
+      tr.append(el('td', 'txt', r.nombre), el('td', null, r.categoria || ''), el('td', null, r.ciudad || ''), tdv); return tr;
+    }));
+    const d = document.getElementById('detail'); d.replaceChildren();
+    const r = all.find((x) => x.id === st.asel) || rows[0];
+    if (r) {
+      const dl = el('dl'); const add = (k, v) => { if (v == null || v === '') return; dl.append(el('dt', null, k), el('dd', null, v)); };
+      add('Tipo', [r.categoria, r.subtipo].filter(Boolean).join(', ')); add('Ciudad', r.ciudad || 'Sin ciudad en la fuente'); add('Dirección', r.direccion);
+      add(r.base_valor === 'Avalúo' ? 'Avalúo' : 'Valor en libros', 'COP ' + es(r.valor_cop / 1e9, 1) + ' mil millones'); add('Fecha', r.fecha_valor);
+      add('Peso en el portafolio', es(r.valor_cop / d3.sum(all, (x) => x.valor_cop) * 100, 2) + '%'); add('Participación del fondo', r.participacion_pct != null ? es(r.participacion_pct, 2) + '%' : null); add('Origen', r.origen);
+      const a = el('a', null, 'Documento fuente'); a.href = r.fuente_url; a.target = '_blank'; a.rel = 'noopener';
+      d.append(el('div', 're-note', st.asel ? 'Activo seleccionado' : 'Activo de mayor valor del filtro'), el('div', 'nm', r.nombre), dl); if (r.nota) d.appendChild(el('p', 're-note', r.nota)); d.appendChild(a);
+    }
+    document.getElementById('act-n').textContent = f === 'PEI' ? 'Avalúos 2025 del Informe Anual de Pei. La fuente no publica ciudad ni área por activo; la ciudad aparece solo cuando el nombre o el fideicomiso la indica. "Dav" son inmuebles del portafolio arrendado a Davivienda. Plaza Central figura al 100% aunque Pei vendió el 51% en junio de 2026.' : 'Valor en libros a diciembre de 2024 (último informe que lista los inmuebles uno a uno). Dirección y ciudad del reglamento de emisión; 41 inmuebles no tienen ciudad en la fuente. La Titularizadora no publica área ni arrendatario por inmueble.';
+  }
+  document.getElementById('f-q').addEventListener('input', (e) => { st.q = e.target.value.toLowerCase(); drawActivos(pf()); });
+  document.getElementById('f-cat').addEventListener('change', (e) => { st.cat = e.target.value || null; drawPortafolio(); });
+  document.getElementById('f-ciu').addEventListener('change', (e) => { st.ciu = e.target.value; drawActivos(pf()); });
+  document.getElementById('tact').querySelectorAll('[data-sort]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.sort; if (st.sort === k) st.dir *= -1; else { st.sort = k; st.dir = k === 'valor_cop' ? -1 : 1; } drawActivos(pf()); }));
+  const rowPick = (e) => { const tr = e.target.closest('tr[data-key]'); if (tr) { st.asel = decodeURIComponent(tr.dataset.key); drawActivos(pf()); drawTree(pf()); drawPick(pf()); } };
+  document.getElementById('tact').addEventListener('click', rowPick);
+  document.getElementById('tact').addEventListener('keydown', (e) => { if (e.key === 'Enter') rowPick(e); });
+
+  function drawPortafolio() {
+    const f = pf(); const c = COL[f];
+    document.getElementById('pf-title').textContent = 'Qué tiene ' + f;
+    document.getElementById('pf-lead').textContent = f === 'PEI'
+      ? 'Pei es el vehículo inmobiliario más grande del país: centros comerciales, oficinas, bodegas y activos especializados en más de 30 ciudades.'
+      : 'TIN es un portafolio de locales comerciales, bodegas y oficinas, la mayoría comprados con un contrato de arriendo vigente, como sucursales de bancos.';
+    const cats = document.getElementById('cats'); const cn = document.getElementById('cats-n');
+    if (failed('composicion', 'activos')) fail(cats);
+    else if (ok('composicion', 'activos')) {
+      const C = dash.data('composicion').data.filter((r) => r.fondo === f);
+      const tipo = C.filter((r) => r.dimension === 'tipo').sort((a, b) => b.pct - a.pct);
+      const desc = Object.fromEntries(C.filter((r) => r.dimension === 'descripcion').map((r) => [r.categoria, r.nota]));
+      const A = assetsOf(f);
+      const PMAP = { 'Comercial': ['Centros comerciales', 'Locales comerciales'], 'Corporativo': ['Corporativos'], 'Logístico': ['Logísticos'], 'Especializado': ['Especializados'] };
+      const items = f === 'PEI'
+        ? Object.keys(PMAP).map((k) => ({ k, fk: k, pct: d3.sum(tipo.filter((t) => PMAP[k].includes(t.categoria)), (t) => t.pct), n: A.filter((r) => r.categoria === k).length, desc: desc[k] }))
+        : tipo.map((t) => ({ k: t.categoria, fk: COMPCAT[t.categoria], pct: t.pct, desc: desc[t.categoria] }));
+      items.sort((a, b) => b.pct - a.pct);
+      // La última frase, cuando se repite en todas las descripciones, se muestra una sola vez al pie.
+      const lastSent = (s) => { const parts = (s || '').trim().split(/(?<=\.)\s+/); return parts.length > 1 ? parts[parts.length - 1] : null; };
+      const ls = items.map((it) => lastSent(it.desc)); const common = ls.every((x) => x && x === ls[0]) ? ls[0] : null;
+      cats.replaceChildren(...items.map((it) => {
+        const b = fs(el('button', 'rx-cat'), f); b.type = 'button'; const on = st.cat === it.fk; b.setAttribute('aria-pressed', String(on));
+        const h = el('div', 'h'); const nm = el('span', 'nm'); const sw = el('span', 'sw'); sw.style.background = catColor(f, it.fk); nm.append(sw, document.createTextNode(it.k)); h.append(nm, el('span', 'pc', es(it.pct, 1) + '%'));
+        const mini = el('div', 'mini'); const fl = el('span'); fl.style.width = Math.min(100, it.pct) + '%'; mini.appendChild(fl);
+        const dtx = it.desc ? (common ? it.desc.slice(0, it.desc.lastIndexOf(common)).trim() : it.desc) : '';
+        const ft = el('div', 'ft'); ft.appendChild(el('span', null, it.n != null ? it.n + ' activos en la tabla de avalúos' : '')); const fla = el('span', 'fl'); fla.innerHTML = FILTER_ICON; fla.append(on ? 'Quitar filtro' : 'Filtrar'); ft.appendChild(fla);
+        b.append(h, mini, el('div', 'ds', dtx), ft);
+        if (dtx) b.title = dtx;
+        b.addEventListener('click', () => { st.cat = st.cat === it.fk ? null : it.fk; st.asel = null; drawPortafolio(); });
+        return b;
+      }));
+      cn.textContent = tipo[0] ? 'Porcentaje del ' + tipo[0].base.charAt(0).toLowerCase() + tipo[0].base.slice(1) + ', corte ' + fmtD(parse(tipo[0].fecha_corte)) + '.' + (common ? ' ' + common : '') : '';
+    }
+    if (ok('activos')) {
+      requestAnimationFrame(() => drawTree(f));
+      drawPick(f);
+      drawActivos(f);
+      const A = assetsOf(f); const tot = d3.sum(A, (r) => r.valor_cop);
+      const b0 = A[0];
+      document.getElementById('tree-n').textContent = b0 ? (b0.base_valor === 'Avalúo' ? 'Tamaño según avalúo 2025' : 'Tamaño según valor en libros a diciembre de 2024') : '';
+      const tc = document.getElementById('tree-cnt'); tc.replaceChildren();
+      if (ok('fichas')) { const r = ficha(f); if (r && num(r.num_activos) !== A.length) tc.append(A.length + ' inmuebles en la ' + (b0 && b0.base_valor === 'Avalúo' ? 'tabla de avalúos 2025' : 'última tabla de inmuebles (diciembre de 2024)') + '; el informe de ', mark(el('span'), f, 'num_activos_t'), ' reporta ', mark(el('span'), f, 'num_activos'), ' activos.'); }
+      const base = A.filter((r) => !st.cat || r.categoria === st.cat);
+      const top = base.slice().sort((a, b) => b.valor_cop - a.valor_cop).slice(0, 10);
+      document.getElementById('top-title').textContent = 'Diez activos de mayor valor' + (st.cat ? ': ' + st.cat : '');
+      hbars(document.getElementById('top'), top.map((r) => ({ k: r.nombre, v: r.valor_cop, label: es(r.valor_cop / tot * 100, 1) + '%', note: r.categoria })), c);
+      document.getElementById('top-n').textContent = (st.cat ? 'Los diez activos más grandes del tipo ' + st.cat + ' suman ' : 'Los diez activos más grandes suman ') + es(d3.sum(top, (r) => r.valor_cop) / tot * 100, 1) + '% del valor del portafolio. ' + (f === 'PEI' ? 'Plaza Central figura al 100%, antes de la venta del 51%.' : 'Valor en libros a diciembre de 2024.');
+      if (f === 'PEI') {
+        const known = A.filter((r) => r.ciudad);
+        const g = d3.rollups(known, (v) => d3.sum(v, (r) => r.valor_cop), (r) => r.ciudad).sort((a, b) => b[1] - a[1]);
+        const rowsC = g.slice(0, 8).map(([k, v]) => ({ k, v: v / tot * 100, label: es(v / tot * 100, 1) + '%' }));
+        const rest = d3.sum(g.slice(8), (x) => x[1]); if (rest) rowsC.push({ k: 'Otras ciudades', v: rest / tot * 100, label: es(rest / tot * 100, 1) + '%' });
+        const nd = tot - d3.sum(known, (r) => r.valor_cop); rowsC.push({ k: 'Sin ciudad en la fuente', v: nd / tot * 100, label: es(nd / tot * 100, 1) + '%', nd: true });
+        hbars(document.getElementById('ciu'), rowsC, c, 100);
+        document.getElementById('ciu-n').textContent = 'Porcentaje del avalúo total. Cálculo propio con los activos cuya ciudad aparece en la fuente; Pei no publica una distribución por ciudad con base clara.';
+      }
+    }
+    if (f === 'TIN' && ok('composicion')) {
+      const Ci = dash.data('composicion').data.filter((r) => r.fondo === f && r.dimension === 'ciudad').sort((a, b) => b.pct - a.pct);
+      hbars(document.getElementById('ciu'), Ci.map((r) => ({ k: r.categoria, v: r.pct, label: es(r.pct, 1) + '%' })), c, 100);
+      document.getElementById('ciu-n').textContent = 'Porcentaje del activo, corte junio de 2026, presentación corporativa del emisor.';
+    }
+  }
+
+  // RIESGOS
+  const IC = { PEI: { 'IBR': ['#074A97', '#FFFFFF'], 'IPC': ['#7FA2CF', INK], 'Tasa fija': ['#C9D8EC', INK] }, TIN: { 'IBR': ['#067A7C', '#FFFFFF'], 'IPC': ['#6CC0C2', INK], 'Tasa fija': ['#C7E8E9', INK] } };
+  function drawRiesgos() {
+    document.getElementById('rk-title').textContent = st.sel === 'AMBOS' ? 'Qué riesgos tienen PEI y TIN' : 'Qué riesgos tiene ' + st.sel;
+    document.getElementById('q-ltv').replaceChildren(q('ltv')); document.getElementById('q-vac').replaceChildren(q('vac'));
+    const L = document.getElementById('rk-ltv');
+    if (failed('fichas', 'indicadores')) fail(L);
+    else if (ok('fichas', 'indicadores')) L.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const r = ficha(f);
+      const v = parseFloat(String(r.ltv).replace(',', '.')) || 0; const max = 40;
+      const wrap = el('div', 're-gauge'); const big = mark(el('div', 'big'), f, 'ltv');
+      const trk = el('div', 'trk'); const fil = el('div', 'fil'); fil.style.width = (Math.min(v, max) / max * 100) + '%'; const lim = el('div', 'lim'); lim.style.left = 'calc(' + (35 / max * 100) + '% - 1px)'; trk.append(fil, lim);
+      const lb = el('div', 'lbls'); const l1 = el('span', 'l1', '0%'); const l2 = el('span', 'l2', 'Límite 35%'); l2.style.left = (35 / max * 100) + '%'; lb.append(l1, l2);
+      const nt = el('p', 're-note'); nt.append('Usa ' + es(v, 1) + ' de los 35 puntos de endeudamiento que permite su reglamento. Corte ', mark(el('span'), f, 'ltv_t'), '.');
+      wrap.append(big, trk, lb, nt);
+      const ch = el('div', 're-chart sm lc'); c.append(wrap, el('p', 're-sub3', 'Endeudamiento por trimestre'), ch);
+      const I = ind(f); const pts = I.filter((x) => x.ltv_pct != null).map((x) => ({ x: parse(x.fecha_corte), y: x.ltv_pct }));
+      requestAnimationFrame(() => lineChart(ch, { series: [{ name: 'Endeudamiento', lab: f, color: COL[f], tcolor: TXT[f], pts }], refs: [{ y: 35, label: 'Límite 35%' }], H: 190, yDomain: [0, 40], yFmt: (x) => es(x, 0) + '%', tipFmt: (x) => es(x, 2) + '%', labFmt: (x) => es(x, 1) + '%' }));
+      return c;
+    }));
+    const T = document.getElementById('rk-tasa');
+    if (failed('deuda', 'indicadores')) fail(T);
+    else if (ok('deuda', 'indicadores')) T.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const X = dash.data('deuda').data.filter((r) => r.fondo === f);
+      const ix = X.filter((r) => r.dimension === 'indexacion'); const dates = [...new Set(ix.map((r) => r.fecha))].sort();
+      const ibr = ix.find((r) => r.fecha === dates[dates.length - 1] && r.categoria === 'IBR');
+      const sx = el('p', 're-stat'); if (ibr) sx.append(el('b', null, es(ibr.pct, 1) + '%'), ' de la deuda está atada a la IBR, que se mueve con la tasa del Banco de la República. ');
+      sx.append(f === 'PEI' ? 'El resto está indexado a la inflación (IPC) o a tasa fija; cuando bajan las tasas, la parte en IBR se abarata primero.' : 'TIN se financia con créditos bancarios de corto plazo que renueva cada 3 a 6 meses.');
+      c.appendChild(sx);
+      const stk = el('div');
+      for (const d of dates.slice(-6)) {
+        const row = el('div'); Object.assign(row.style, { display: 'grid', gridTemplateColumns: '5rem 1fr', gap: '10px', alignItems: 'center', marginBottom: '8px' });
+        const sk = el('div', 'rx-stack');
+        for (const r of ix.filter((x) => x.fecha === d && x.pct > 0)) { const [bg, fg] = IC[f][r.categoria] || ['#9AA3AB', INK]; const s2 = el('span', null, r.pct >= 9 ? es(r.pct, 0) + '%' : ''); s2.style.width = r.pct + '%'; s2.style.background = bg; s2.style.color = fg; s2.title = r.categoria + ': ' + es(r.pct, 1) + '%'; sk.appendChild(s2); }
+        const lab = parse(d); row.append(el('span', 're-note', MES[lab.getUTCMonth()] + ' ' + lab.getUTCFullYear()), sk); stk.appendChild(row);
+      }
+      const lg = el('div', 're-legend'); for (const k of ['IBR', 'IPC', 'Tasa fija']) { if (!ix.some((r) => r.categoria === k)) continue; const s3 = el('span'); const sw = el('span', 're-sw'); sw.style.background = IC[f][k][0]; sw.style.boxShadow = 'inset 0 0 0 1px rgba(14,27,44,.2)'; s3.append(sw, document.createTextNode(k)); lg.appendChild(s3); }
+      c.append(stk, lg);
+      const I = ind(f); const kd = I.filter((x) => x.costo_deuda_pct != null).map((x) => ({ x: parse(x.fecha_corte), y: x.costo_deuda_pct }));
+      if (kd.length) { const ch = el('div', 're-chart xs lc'); c.append(el('p', 're-sub3', 'Costo promedio de la deuda'), ch); requestAnimationFrame(() => lineChart(ch, { series: [{ name: 'Costo de la deuda', lab: 'Costo', color: SEC, tcolor: SEC, pts: kd }], H: 160, yDomain: [0, (d3.max(kd, (p) => p.y) || 10) * 1.25], yFmt: (x) => es(x, 0) + '%', tipFmt: (x) => es(x, 2) + '%', labFmt: (x) => es(x, 1) + '%' })); }
+      const B = X.filter((r) => r.dimension === 'bono' || r.dimension === 'instrumento');
+      if (B.length && st.mode === 'analista') {
+        const w = el('div', 'an'); const tb = el('table', 'rx-t');
+        const th = el('thead'); const trh = el('tr'); ['Instrumento', 'Saldo (COP millones)', 'Condiciones'].forEach((t, i) => trh.appendChild(el('th', i === 2 ? 'txt' : null, t))); th.appendChild(trh);
+        const bd = el('tbody'); for (const r of B) { const tr = el('tr'); tr.append(el('td', null, (r.dimension === 'bono' ? 'Bono ' : '') + r.categoria), el('td', null, es(r.monto_cop / 1e6)), el('td', 'txt', r.nota || '')); bd.appendChild(tr); }
+        tb.append(th, bd); const tw = el('div', 'rx-tw'); tw.appendChild(tb); w.append(el('p', 're-sub3', 'Instrumentos de deuda'), tw);
+        w.appendChild(el('p', 're-note', f === 'PEI' ? 'Saldos a diciembre de 2025. Series de bonos según BRC Ratings, abril 2025 (fuente secundaria). Pei no publica la escalera de vencimientos de sus créditos bancarios.' : 'Saldos a diciembre de 2025, estados financieros 2025. A junio de 2026 la deuda era de COP 142.000 millones; el plan 2026 del emisor es sustituir toda la deuda financiera con una nueva emisión.'));
+        c.appendChild(w);
+      }
+      return c;
+    }));
+    const V = document.getElementById('rk-vac');
+    if (failed('indicadores')) fail(V);
+    else if (ok('indicadores')) V.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const I = ind(f); const ser = (k) => I.filter((r) => r[k] != null).map((r) => ({ x: parse(r.fecha_corte), y: r[k] }));
+      const ch = el('div', 're-chart sm lc'); c.append(ch, el('p', 're-note', 'Física: área sin arrendar sobre área total. Económica: ingreso que se deja de recibir por espacios vacíos.'));
+      requestAnimationFrame(() => lineChart(ch, { series: [{ name: 'Vacancia física', lab: 'Física', color: COL[f], tcolor: TXT[f], pts: ser('vacancia_fisica_pct') }, { name: 'Vacancia económica', lab: 'Económica', color: SEC, dash: '5,4', w: 2, pts: ser('vacancia_economica_pct') }], H: 200, yDomain: [0, d3.max(I, (r) => Math.max(r.vacancia_fisica_pct || 0, r.vacancia_economica_pct || 0)) * 1.25 || 10], yFmt: (x) => es(x, 0) + '%', tipFmt: (x) => es(x, 2) + '%', labFmt: (x) => es(x, 1) + '%' }));
+      return c;
+    }));
+    const A = document.getElementById('rk-arr');
+    if (failed('composicion')) fail(A);
+    else if (ok('composicion', 'fichas')) A.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const C = dash.data('composicion').data.filter((r) => r.fondo === f);
+      if (f === 'TIN') {
+        const Lm = Object.fromEntries(C.filter((r) => r.dimension === 'limite').map((r) => [r.categoria, r.pct]));
+        const ar = C.filter((r) => r.dimension === 'arrendatario'); const named = ar.filter((r) => r.categoria !== 'Otros');
+        if (named[0]) { const sx = el('p', 're-stat'); sx.append(named[0].categoria + ' pesa ', el('b', null, es(named[0].pct, 1) + '%'), ' y los tres principales suman ', el('b', null, es(d3.sum(named.slice(0, 3), (r) => r.pct), 1) + '%'), '. El reglamento limita a ' + Lm['Por arrendatario y vinculadas'] + '% el peso de un arrendatario, exigible desde el décimo año de la primera emisión.'); c.appendChild(sx); }
+        const hb = el('div'); hbars(hb, ar.map((r) => ({ k: r.categoria, v: r.pct, label: es(r.pct, 1) + '%' })), COL[f], 60, Lm['Por arrendatario y vinculadas']);
+        c.append(hb, el('p', 're-note', 'La línea vertical marca el límite; el tramo rayado es lo que lo supera. Porcentajes asignados según el orden de las etiquetas de la gráfica del emisor; por verificar.'));
+      } else {
+        const big = el('div', 're-big'); big.append(mark(el('span'), f, 'arrendatarios'), el('small', null, 'arrendatarios'));
+        const sub = el('p', 're-note'); sub.append('Arrendatarios por marca, corte ', mark(el('span'), f, 'arr_t'), '. Pei no publica la lista de sus principales arrendatarios ni su peso. Los nombres de varios activos (Avianca, Isagen, Itaú, Nutresa, Sanitas, el portafolio Davivienda) corresponden a su arrendatario principal.');
+        c.append(big, sub);
+      }
+      return c;
+    }));
+    const tw = document.getElementById('rk-tin-wrap'); const TT = document.getElementById('rk-tin');
+    tw.hidden = !funds().includes('TIN');
+    if (!tw.hidden && ok('composicion')) {
+      const f = 'TIN'; const C = dash.data('composicion').data.filter((r) => r.fondo === f);
+      const Lm = Object.fromEntries(C.filter((r) => r.dimension === 'limite').map((r) => [r.categoria, r.pct]));
+      const se = C.filter((r) => r.dimension === 'sector');
+      const c1 = fcard(f); c1.appendChild(el('p', 're-sub3', 'Por sector económico'));
+      if (se[0]) { const sx = el('p', 're-stat'); sx.append(se[0].categoria + ' representa ', el('b', null, es(se[0].pct, 1) + '%'), ', frente a un límite de ' + Lm['Por sector económico'] + '% por sector. Davivienda e Itaú, dos bancos, explican la mayor parte.'); c1.appendChild(sx); }
+      const hb = el('div'); hbars(hb, se.map((r) => ({ k: r.categoria, v: r.pct, label: es(r.pct, 1) + '%' })), COL[f], 60, Lm['Por sector económico']);
+      c1.append(hb, el('p', 're-note', 'La línea vertical marca el límite por sector. Base no rotulada por el emisor; por verificar.'));
+      const venc = C.filter((r) => r.dimension === 'vencimiento').sort((a, b) => +a.categoria - +b.categoria);
+      const y0 = new Date().getUTCFullYear(); const near = d3.sum(venc.filter((r) => +r.categoria <= y0 + 1), (r) => r.pct);
+      const c2 = fcard(f); c2.appendChild(el('p', 're-sub3', 'Cuándo vencen los contratos'));
+      const sx2 = el('p', 're-stat'); sx2.append(el('b', null, es(near, 1) + '%'), ' de los contratos vence entre ' + y0 + ' y ' + (y0 + 1) + '. Su renovación pesa en el ingreso de los próximos periodos.');
+      const vb = el('div', 're-chart sm'); c2.append(sx2, vb, el('p', 're-note', 'Porcentaje de los contratos que vence cada año, corte junio de 2026.'));
+      TT.replaceChildren(c1, c2);
+      requestAnimationFrame(() => barChart(vb, { data: venc.map((r) => ({ k: r.categoria, v: r.pct })), color: COL[f], yFmt: (v) => es(v, 0) + '%', tipFmt: (v) => es(v, 1) + '%', all: true }));
+    }
+  }
+
+  // HISTÓRICO
+  function descSeries(per) {
+    const d = dash.data('descuento_serie').data || [];
+    const c = cut(per);
+    return ['PEI', 'TIN'].map((f) => ({ name: f, lab: f, color: COL[f], tcolor: TXT[f], pts: d.filter((r) => r.fondo === f && (!c || parse(r.fecha) >= c)).map((r) => ({ x: parse(r.fecha), y: r.descuento })) }));
+  }
+  const legLine = (txt, color, dash, dot) => { const s = el('span'); const ns = 'http://www.w3.org/2000/svg'; const sv = document.createElementNS(ns, 'svg'); sv.setAttribute('width', '28'); sv.setAttribute('height', '12'); sv.setAttribute('aria-hidden', 'true'); if (dot) { const ci = document.createElementNS(ns, 'circle'); ci.setAttribute('cx', '14'); ci.setAttribute('cy', '6'); ci.setAttribute('r', dot === 'ev' ? '6' : '4'); ci.setAttribute('fill', dot === 'hollow' ? '#FFFFFF' : color); ci.setAttribute('stroke', color); ci.setAttribute('stroke-width', '2'); sv.appendChild(ci); } else { const ln = document.createElementNS(ns, 'line'); ln.setAttribute('x1', '1'); ln.setAttribute('x2', '27'); ln.setAttribute('y1', '6'); ln.setAttribute('y2', '6'); ln.setAttribute('stroke', color); ln.setAttribute('stroke-width', '2.5'); if (dash) ln.setAttribute('stroke-dasharray', dash); sv.appendChild(ln); } s.append(sv, document.createTextNode(txt)); return s; };
+  function drawHist() {
+    const box = document.getElementById('ch-hist'); const ins = document.getElementById('h-insight'); const note = document.getElementById('h-note'); const leg = document.getElementById('h-leg');
+    if (failed('precios', 'indicadores', 'eventos', 'descuento_serie')) return fail(box);
+    if (!ok('precios', 'indicadores', 'eventos_tabla', 'descuento_serie', 'fichas')) return;
+    const on = funds(); const c = cut(st.hPer);
+    const E = dash.data('eventos_tabla').data.filter((r) => on.includes(r.fondo)).map((r) => ({ x: parse(r.fecha), n: r.n }));
+    const prices = (f) => dash.data('precios').data.filter((r) => r.fondo === f && r.negociacion_continua && (!c || parse(r.fecha) >= c)).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+    const evLeg = el('span'); evLeg.append(el('span', 're-evdot'), document.createTextNode('Evento numerado (ver tabla)'));
+    ins.replaceChildren();
+    if (st.hView === 'desc') {
+      lineChart(box, { series: descSeries(st.hPer).filter((x) => on.includes(x.name)), events: E, yFmt: (v) => es(v * 100, 0) + '%', tipFmt: (v) => es(v * 100, 1) + '%', zero: true, H: 340 });
+      ins.append('Hoy el descuento es ');
+      on.forEach((f, i) => { if (i) ins.append(' en ' + on[0] + ' y '); ins.append(mark(el('b', 'num'), f, 'descuento')); });
+      ins.append(' en ' + on[on.length - 1] + '.');
+      if (on.length === 1) { ins.append(' Es más alto que en ', mark(el('b', 'num'), on[0], 'percentil_n'), ' de cada 100 días ' + (on[0] === 'PEI' ? 'desde 2023.' : 'desde enero de 2026.')); }
+      leg.replaceChildren(evLeg);
+      note.textContent = 'Más arriba significa un descuento mayor. Cada día se compara el precio de cierre con el último valor patrimonial publicado. PEI tiene valor patrimonial anual de 2023 a 2025 y trimestral desde 2026, por eso su línea salta en cada nuevo corte.';
+    } else if (st.hView === 'pv') {
+      const series = [], steps = [];
+      on.forEach((f) => {
+        series.push({ name: f + ' precio', lab: f, color: COL[f], tcolor: TXT[f], pts: prices(f).map((r) => ({ x: parse(r.fecha), y: r.cierre })) });
+        steps.push({ name: f + ' valor patrimonial', color: COL[f], pts: dash.data('indicadores').data.filter((r) => r.fondo === f && r.nav_por_titulo != null).map((r) => ({ x: parse(r.fecha_corte), y: r.nav_por_titulo, calc: r.nav_origen === 'calculado' })).sort((a, b) => a.x - b.x) });
+      });
+      const all = series.flatMap((s) => s.pts);
+      lineChart(box, { series, steps, events: E, H: 340, yDomain: [0, d3.max([...all, ...steps.flatMap((s) => s.pts)], (p) => p.y) * 1.05], xDomain: d3.extent(all, (p) => p.x), yFmt: (v) => es(v / 1000) + ' mil', tipFmt: (v) => 'COP ' + es(v), labFmt: (v) => es(v / 1000, 1) + ' mil' });
+      on.forEach((f, i) => { if (i) ins.append(' '); ins.append('Hoy ' + f + ' cotiza a ', mark(el('b', 'num'), f, 'precio'), ' frente a un valor patrimonial de ', mark(el('b', 'num'), f, 'nav'), '.'); });
+      leg.replaceChildren(legLine('Precio de cierre', INK), legLine('Valor patrimonial por título', INK, '6,4'), legLine('Valor reportado', INK, null, 'full'), legLine('Valor calculado', INK, null, 'hollow'), evLeg);
+      note.textContent = 'La distancia entre la línea continua (precio) y la punteada (valor patrimonial) es el descuento en pesos. Punto vacío: valor patrimonial calculado a partir del patrimonio; punto lleno: reportado por el emisor.';
+    } else {
+      const series = [], parts = [];
+      on.forEach((f) => {
+        const P = prices(f); if (!P.length) return;
+        const D = dash.data('indicadores').data.filter((r) => r.fondo === f && r.distribucion_por_titulo_cop != null).map((r) => ({ d: new Date(parse(r.fecha_corte).getTime() + 45 * 864e5), v: r.distribucion_por_titulo_cop }));
+        const p0 = P[0].cierre, t0 = parse(P[0].fecha);
+        const pts = P.map((r) => { const x = parse(r.fecha); const acc = D.filter((q2) => q2.d > t0 && q2.d <= x).reduce((s, q2) => s + q2.v, 0); return { x, y: (r.cierre + acc) / p0 * 100, px: r.cierre / p0 * 100 }; });
+        series.push({ name: f + ' con pagos', lab: f, color: COL[f], tcolor: TXT[f], pts: pts.map((p) => ({ x: p.x, y: p.y })) });
+        series.push({ name: f + ' solo precio', color: COL[f], dash: '5,4', w: 1.6, end: false, pts: pts.map((p) => ({ x: p.x, y: p.px })) });
+        const l = pts[pts.length - 1]; parts.push(f + ' ' + sgn(l.y - 100) + '% con pagos y ' + sgn(l.px - 100) + '% solo por precio');
+      });
+      lineChart(box, { series, events: E, H: 340, yFmt: (v) => es(v, 0), tipFmt: (v) => es(v, 1) });
+      ins.textContent = 'Desde el inicio del periodo: ' + parts.join('; ') + '.';
+      leg.replaceChildren(legLine('Con pagos (distribuciones)', INK), legLine('Solo precio', INK, '5,4'), evLeg);
+      note.textContent = 'Índice base 100. Suma las distribuciones acumuladas sin reinvertirlas; cada distribución se ubica 45 días después del cierre del trimestre. Los resultados pasados no garantizan resultados futuros.';
+    }
+    const T = dash.data('eventos_tabla').data.slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+    document.querySelector('#tabla-eventos tbody').replaceChildren(...T.map((r) => {
+      const tr = el('tr'); tr.dataset.key = encodeURIComponent(r.fondo) + ',' + encodeURIComponent(r.fecha);
+      const tn = el('td'); tn.appendChild(el('span', 'evn-b', String(r.n)));
+      const a = el('a', null, r.evento); a.href = r.fuente_url; a.target = '_blank'; a.rel = 'noopener'; const te = el('td', 'txt ev'); te.appendChild(a);
+      const tf = el('td', null, r.fondo); tf.style.color = TXT[r.fondo]; tf.style.fontWeight = 700;
+      tr.append(tn, el('td', null, r.fecha_txt), tf, te); return tr;
+    }));
+  }
+
+  // VALORACIÓN
+  const VAL = [
+    { k: 'pvp', n: 'Precio sobre valor patrimonial', g: 'desc', ex: 'Precio en bolsa dividido por el valor patrimonial por título. Por debajo de 1,0x hay descuento.' },
+    { k: 'cap_impl', n: 'Cap rate implícito en el precio', g: 'capi', ex: 'NOI de 12 meses sobre el valor de mercado del fondo más su deuda. NOI de ', b: 'noi_base' },
+    { k: 'cap_aval', n: 'Cap rate de los avalúos', g: 'capa', ex: 'El mismo NOI sobre el valor de los activos según los avalúos. NOI de ', b: 'noi_base' },
+    { k: 'spread', n: 'Diferencia entre cap rates', g: null, ex: 'Diferencia en puntos porcentuales entre el cap rate implícito en el precio y el de los avalúos.' },
+    { k: 'deuda_ebitda', n: 'Deuda sobre EBITDA', g: 'debitda', ex: 'Años de EBITDA que tomaría pagar la deuda. EBITDA de ', b: 'ebitda_base' },
+    { k: 'icr', n: 'Cobertura de intereses', g: 'icr', ex: 'Veces que el EBITDA cubre el gasto financiero. EBITDA de ', b: 'ebitda_base' },
+    { k: 'payout', n: 'Distribución sobre NOI', g: 'payout', ex: 'Parte del NOI de 12 meses que se repartió a los inversionistas.' },
+    { k: 'p_dist', n: 'Precio sobre distribución', g: null, ex: 'Equivalente local al precio sobre AFFO de los REITs: años de distribuciones al ritmo actual que cuesta un título.' },
+    { k: 'dist_crec', n: 'Crecimiento de la distribución por título', g: null, ex: 'Últimos cuatro trimestres frente a los cuatro anteriores.' },
+    { k: 'var_ibr', n: 'Deuda atada a la IBR', g: null, ex: 'Porción de la deuda cuya tasa cambia con la del Banco de la República. Corte: ', b: 'idx_corte' },
+    { k: 'rotacion', n: 'Rotación anual', g: 'vol', ex: 'Monto negociado en un año sobre el valor en bolsa. Mide qué tan líquido es el título.' },
+  ];
+  function drawValoracion() {
+    if (st.mode !== 'analista') return;
+    document.getElementById('q-cap').replaceChildren(q('capi')); document.getElementById('q-icr').replaceChildren(q('icr'));
+    const grid = document.getElementById('val-grid');
+    if (failed('valoracion')) fail(grid);
+    else if (ok('valoracion')) {
+      grid.replaceChildren(...VAL.map((m) => {
+        const card = el('div', 'rx-vm'); const n = el('div', 'n', m.n); if (m.g) n.appendChild(q(m.g));
+        const pair = el('div', 'pair');
+        for (const f of ['PEI', 'TIN']) { const b = fs(el('div'), f); b.append(el('div', 'f', f), vmark(el('div', 'v'), f, m.k)); pair.appendChild(b); }
+        const ex = el('div', 'ex', m.ex);
+        if (m.b) { ex.append('PEI '); ex.appendChild(vmark(el('span'), 'PEI', m.b)); ex.append('; TIN '); ex.appendChild(vmark(el('span'), 'TIN', m.b)); ex.append('.'); }
+        card.append(n, pair, ex); return card;
+      }));
+      document.getElementById('val-insight').replaceChildren('Al precio de cierre, el cap rate implícito de PEI es ', vmark(el('b'), 'PEI', 'cap_impl'), ' frente a ', vmark(el('b'), 'PEI', 'cap_aval'), ' de sus avalúos, y TIN ', vmark(el('b'), 'TIN', 'cap_impl'), ' frente a ', vmark(el('b'), 'TIN', 'cap_aval'), '. En los dos fondos, el cap rate implícito en el precio es mayor que el de los avalúos.');
+    }
+    const box = document.getElementById('v-cap');
+    if (failed('caprate_serie')) fail(box);
+    else if (ok('caprate_serie')) box.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const S = dash.data('caprate_serie').data.filter((r) => r.fondo === f); const ch = el('div', 're-chart lc'); c.appendChild(ch);
+      if (S.length < 2 && f === 'TIN') c.appendChild(el('p', 're-note', 'TIN tiene un solo cierre trimestral con negociación continua y todos los datos necesarios (junio de 2026).'));
+      requestAnimationFrame(() => lineChart(ch, { series: [{ name: 'Implícito en el precio', lab: 'Implícito', color: COL[f], tcolor: TXT[f], pts: S.map((r) => ({ x: parse(r.fecha), y: r.implicito })) }, { name: 'Avalúos', lab: 'Avalúos', color: SEC, dash: '5,4', w: 2, pts: S.map((r) => ({ x: parse(r.fecha), y: r.avaluo })) }], H: 240, yDomain: [0, (d3.max(S, (r) => Math.max(r.implicito, r.avaluo)) || 0.1) * 1.2], yFmt: (v) => es(v * 100, 0) + '%', tipFmt: (v) => es(v * 100, 1) + '%' }));
+      return c;
+    }));
+    const ib = document.getElementById('v-icr');
+    if (failed('finanzas')) fail(ib);
+    else if (ok('finanzas')) ib.replaceChildren(...funds().map((f) => {
+      const c = fcard(f); const Fz = dash.data('finanzas').data.filter((r) => r.fondo === f && r.ebitda_cop != null && r.gastos_financieros_cop != null).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+      c.appendChild(el('p', 're-sub3', f === 'PEI' ? 'Por trimestre' : 'Por año'));
+      const ch = el('div', 're-chart sm'); c.appendChild(ch);
+      requestAnimationFrame(() => barChart(ch, { data: Fz.map((r) => ({ k: f === 'PEI' ? tqs(r.periodo) : r.periodo.replace('Año ', ''), v: r.ebitda_cop / r.gastos_financieros_cop })), color: COL[f], yFmt: (v) => es(v, 1) + 'x', all: true, H: 200 }));
+      return c;
+    }));
+  }
+
+  // SIMULADOR
+  const montoIn = document.getElementById('s-monto'); const descIn = document.getElementById('s-desc');
+  montoIn.addEventListener('input', () => { const n = parseInt(montoIn.value.replace(/\D/g, ''), 10); if (!isNaN(n)) montoIn.value = es(n); drawSim(); });
+  descIn.addEventListener('input', drawSim);
+  function simBase(f) {
+    const P = dash.data('precios').data.filter((r) => r.fondo === f && r.negociacion_continua).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+    const last = P[P.length - 1];
+    const I = dash.data('indicadores').data.filter((r) => r.fondo === f && r.fecha_corte <= last.fecha).sort((a, b) => a.fecha_corte < b.fecha_corte ? -1 : 1);
+    const nav = I.filter((r) => r.nav_por_titulo != null).pop().nav_por_titulo;
+    const D = I.filter((r) => r.distribucion_por_titulo_cop != null).slice(-4);
+    return { last, nav, cur: 1 - last.cierre / nav, d12: D.length === 4 ? D.reduce((s, r) => s + r.distribucion_por_titulo_cop, 0) : null };
+  }
+  function setSimDefault() { if (!ok('precios', 'indicadores')) return; const b = simBase(st.sFondo); descIn.value = String(Math.max(0, Math.min(80, Math.round(b.cur * 100)))); st.simReady = true; }
+  function drawSim() {
+    const out = document.getElementById('s-out'); const res = document.getElementById('s-res');
+    if (failed('precios', 'indicadores')) { fail(out); return; }
+    if (!ok('precios', 'indicadores')) return;
+    if (!st.simReady) setSimDefault();
+    const f = st.sFondo; const { last, nav, cur, d12 } = simBase(f);
+    const v = +descIn.value; document.getElementById('s-desc-v').textContent = v + '%';
+    const mk = document.getElementById('s-mk'); const p = Math.max(0, Math.min(1, cur * 100 / 80)); mk.style.left = 'calc(' + (p * 100) + '% + ' + ((0.5 - p) * 16) + 'px)'; mk.textContent = 'Hoy ' + es(cur * 100, 1) + '%';
+    const monto = parseInt(montoIn.value.replace(/\D/g, ''), 10) || 0;
+    const tit = Math.floor(monto / last.cierre), inv = tit * last.cierre, desc = v / 100, nuevo = tit * nav * (1 - desc);
+    document.getElementById('s-ref').textContent = 'Descuento al último cierre de ' + f + ': ' + es(cur * 100, 1) + '%. Mueve la barra para ver el efecto aritmético de otro descuento.';
+    const same = Math.round(cur * 100) === v;
+    const chg = inv ? (nuevo / inv - 1) * 100 : 0;
+    res.replaceChildren(
+      el('span', 'k', (same ? 'Si el descuento de ' + f + ' se mantiene cerca de ' + v + '%' : 'Si el descuento de ' + f + ' pasa de ' + es(cur * 100, 1) + '% a ' + v + '%') + ', el valor de mercado de esos títulos sería'),
+      el('span', 'v', 'COP ' + es(nuevo)),
+      el('span', 'd', inv ? (chg >= 0 ? '+' : '\u2212') + es(Math.abs(chg), 1) + '% frente al monto inicial, con el último valor patrimonial publicado y sin contar distribuciones.' : 'Escribe un monto mayor al precio de un título.'),
+    );
+    const o = (k, val, d) => { const c = el('div', 'o'); c.append(el('span', 'k', k), el('span', 'v', val), el('span', 'd', d)); return c; };
+    out.replaceChildren(
+      o('Títulos equivalentes', es(tit), 'A COP ' + es(last.cierre) + ' por título, cierre del ' + fmtD(parse(last.fecha)) + '. Monto utilizado: COP ' + es(inv) + '.'),
+      o('Valor patrimonial de esos títulos', 'COP ' + es(tit * nav), 'A COP ' + es(nav) + ' por título, último valor patrimonial publicado.'),
+      o('Distribuciones de los últimos 12 meses', d12 == null ? 'n.d.' : 'COP ' + es(tit * d12), d12 == null ? 'No hay cuatro trimestres cerrados con dato.' : 'Pagadas en los últimos cuatro trimestres, equivalen a ' + es(d12 / last.cierre * 100, 1) + '% del monto. No anticipan pagos futuros.'),
+    );
+    document.getElementById('s-foot').textContent = 'Supone que el valor patrimonial por título se mantiene. Cambios en avalúos, deuda, emisiones o recompras lo modifican. Ejercicio ilustrativo: no constituye una recomendación de inversión.';
+  }
+
+  // CALENDARIO
+  function drawReportes() {
+    const nx = document.getElementById('rep-next'); const tl = document.getElementById('rep-tl');
+    if (failed('reportes')) { fail(nx); return; }
+    if (!ok('reportes')) return;
+    const Rp = dash.data('reportes').data; const now = Date.now();
+    const up = Rp.filter((r) => r.estado !== 'publicado' && funds().includes(r.fondo)).sort((a, b) => (a.fecha_evento || '9') < (b.fecha_evento || '9') ? -1 : 1);
+    nx.replaceChildren(...up.map((r) => {
+      const c = fs(el('div', 're-ev'), r.fondo);
+      const cal = el('div', 'cal' + (r.fecha_evento ? '' : ' tbd'));
+      if (r.fecha_evento) { const d = new Date(r.fecha_evento.slice(0, 10) + 'T00:00:00Z'); cal.append(el('div', 'mo', MES[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2)), el('div', 'dy', String(d.getUTCDate()))); }
+      else cal.append(el('div', 'mo', 'Fecha'), el('div', 'dy', 'Por confirmar'));
+      const t = el('div', 't', r.fondo + ': ' + r.documento);
+      const s = el('div', 's', r.nota || '');
+      const a = el('a', null, r.estado === 'por_confirmar' ? 'Página del emisor ↗' : 'Ver evento ↗'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener';
+      c.append(cal, t, s, a); return c;
+    }));
+    tl.replaceChildren(...funds().map((f) => {
+      const card = fs(el('div', 're-card re-tlc'), f);
+      card.appendChild(el('h3', 're-h3', 'Informes publicados de ' + f));
+      const pubs = Rp.filter((r) => r.fondo === f && r.estado === 'publicado' && r.periodo);
+      const years = [...new Set(pubs.map((r) => +r.periodo.slice(-4)))].sort((a, b) => b - a);
+      const recent = el('div', 're-tl'); const older = el('div', 're-tl');
+      for (const y of years) {
+        const row = el('div', 'yr'); row.appendChild(el('b', null, String(y)));
+        const qs = el('div', 'qs');
+        for (let n = 1; n <= 4; n++) {
+          const docs = pubs.filter((r) => r.periodo.replace('Q', 'T') === n + 'T' + y);
+          const b = el('div', 're-q4'); b.appendChild(el('span', 'ql', n + 'T ' + y));
+          for (const d of docs) { const a = el('a', null, (/Presentaci/.test(d.documento) ? 'Presentación' : /Valora/.test(d.documento) ? 'Prensa (sin informe)' : /fin de ejercicio/.test(d.documento) ? 'Informe anual' : 'Informe') + '\u00a0↗'); a.href = d.url; a.target = '_blank'; a.rel = 'noopener'; a.title = d.documento; b.appendChild(a); }
+          if (!docs.length) { const qEnd = Date.UTC(y, n * 3, 0); b.appendChild(el('span', 'e', qEnd + 120 * 864e5 > now ? 'Esperado' : 'Sin documento')); }
+          qs.appendChild(b);
+        }
+        row.appendChild(qs); (y >= 2025 ? recent : older).appendChild(row);
+      }
+      card.appendChild(recent);
+      if (older.children.length) { const det = el('details', 're-old'); det.appendChild(el('summary', null, 'Ver años anteriores')); det.appendChild(older); card.appendChild(det); }
+      return card;
+    }));
+  }
+
+  function draw() {
+    closePop();
+    R.querySelectorAll('.re-asof [data-source="fichas"]').forEach((n) => { if (ok('fichas')) { n.classList.remove('dash-skeleton'); n.textContent = latestFecha(); } });
+    drawTick(); syncControls(); drawResumen(); drawPagos(); drawPortafolio(); drawRiesgos(); drawHist(); drawValoracion(); drawSim(); drawReportes();
+  }
+  dash.onData(draw);
+  const h = location.hash.slice(1);
+  if (h && document.getElementById(h)) requestAnimationFrame(() => document.getElementById(h).scrollIntoView());
+})();
+</script>
+
+</div>
+</body>
+</html>
