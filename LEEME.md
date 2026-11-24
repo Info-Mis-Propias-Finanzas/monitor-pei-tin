@@ -47,7 +47,7 @@ python3 scripts/actualizar_precios.py
 
 Detalles para quien lo programe:
 
-* Correrlo de lunes a viernes en la mañana, hora Colombia. Ignora el día en curso porque el cierre todavía no es definitivo, así que el dato más reciente siempre es el del día hábil anterior.
+* Correrlo de lunes a viernes, hora Colombia. El cierre del día en curso solo se toma después de las 5 p. m., cuando la BVC ya cerró; antes de esa hora el dato más reciente es el del día hábil anterior. La tarea de GitHub corre varias veces al día porque GitHub puede atrasar las tareas programadas varias horas.
 * Si la BVC no responde después de tres intentos, termina con código 1 y no toca el archivo. La página sigue mostrando el último cierre disponible con su fecha.
 * La consulta necesita salida a `www.bvc.com.co` y `rest.bvc.com.co`. Si el servidor tiene firewall, hay que permitir esos dos dominios. Conviene probar una vez desde el servidor o desde GitHub Actions, porque algunos sitios bloquean IP de centros de datos.
 * Opciones: cron en el servidor donde vive la página, la tarea de ejemplo de GitHub Actions (hace commit y el hosting vuelve a publicar) o una función programada del hosting.
