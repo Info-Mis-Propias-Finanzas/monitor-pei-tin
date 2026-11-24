@@ -5,8 +5,8 @@ Uso:
     python3 scripts/actualizar_precios.py                 # actualiza data/precios.json
     python3 scripts/actualizar_precios.py ruta/precios.json
 
-Correrlo cada día hábil en la mañana (hora Colombia). Solo agrega días ya cerrados:
-el día en curso se ignora porque el precio todavía puede cambiar. Usa solo la librería
+Correrlo cada día hábil (hora Colombia). Solo agrega días ya cerrados: el día en curso
+se toma solo después de las 5 p. m., cuando la BVC ya cerró y el precio es definitivo. Usa solo la librería
 estándar de Python 3.9 o superior. Si la BVC no responde, termina con código 1 y no
 modifica el archivo.
 """
@@ -60,14 +60,17 @@ def num(v):
 
 def main():
     rows = json.load(open(RUTA, encoding='utf-8'))
-    hoy = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).date().isoformat()
+    ahora = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
+    hoy = ahora.date().isoformat()
+    # La BVC cierra hacia las 4 p. m.; desde las 5 p. m. el cierre del día ya es definitivo.
+    cerrado = ahora.hour >= 17
     nuevos, resumen = 0, {}
     for f in ('PEI', 'TIN'):
         ult = max(r['fecha'] for r in rows if r['fondo'] == f)
         desde = (datetime.date.fromisoformat(ult) - datetime.timedelta(days=10)).isoformat()
         for x in historico(f, desde, hoy):
             d, c = x.get('tradeDate'), x.get('close_price')
-            if not d or not c or float(c) < 1000 or d >= hoy:
+            if not d or not c or float(c) < 1000 or d > hoy or (d == hoy and not cerrado):
                 continue
             row = {'fondo': f, 'fecha': d, 'cierre': float(c),
                    'maximo': num(x.get('price_max')), 'minimo': num(x.get('price_min')),
