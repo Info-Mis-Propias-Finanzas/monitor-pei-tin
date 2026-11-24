@@ -1,12 +1,16 @@
 # Actualiza data/precios.json con los cierres de PEI y TIN de la BVC y hace commit.
-# Corre de lunes a viernes dos veces: 7:35 a. m. y 1:05 p. m. hora Colombia (UTC-5).
-# La segunda corrida es respaldo: si la primera ya trajo el cierre, no cambia nada.
+# Corre varias veces por día hábil (hora Colombia, UTC-5) porque GitHub puede atrasar
+# las tareas programadas varias horas. Las corridas después de las 5 p. m. traen el cierre
+# del mismo día; las demás son respaldo. Si no hay datos nuevos, no cambia nada.
 name: Actualizar precios PEI y TIN
 
 on:
   schedule:
-    - cron: '35 12 * * 1-5'
-    - cron: '5 18 * * 1-5'
+    - cron: '17 11 * * 1-5'   # 6:17 a. m.
+    - cron: '35 12 * * 1-5'   # 7:35 a. m.
+    - cron: '5 18 * * 1-5'    # 1:05 p. m.
+    - cron: '47 22 * * 1-5'   # 5:47 p. m. (cierre del día)
+    - cron: '23 1 * * 2-6'    # 8:23 p. m. (respaldo del cierre)
   workflow_dispatch: {}
 
 permissions:
